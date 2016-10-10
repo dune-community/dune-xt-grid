@@ -79,6 +79,12 @@ class CubeGridProviderFactory
     static const int id = 1;
   };
 
+  template <int dim, int dimw, class ctype>
+  struct ElementVariant<Dune::SGrid<dim, dimw, ctype>>
+  {
+    static const int id = 1;
+  };
+
 #if HAVE_DUNE_SPGRID
   template <class ct, int dim, template <int> class Refinement, class Comm>
   struct ElementVariant<Dune::SPGrid<ct, dim, Refinement, Comm>>
