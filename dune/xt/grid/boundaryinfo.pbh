@@ -26,7 +26,7 @@ namespace Grid {
 
 
 template <class C>
-pybind11::class_<C> bind_BoundaryInfo(pybind11::module& m, const std::string& id/*, const std::string& method_id*/)
+pybind11::class_<C> bind_BoundaryInfo(pybind11::module& m, const std::string& id /*, const std::string& method_id*/)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
