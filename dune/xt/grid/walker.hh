@@ -351,6 +351,11 @@ protected:
   std::vector<std::unique_ptr<internal::Codim1Object<GridLayerType>>> codim1_functors_;
 }; // class Walker
 
+template <class G>
+Walker<G> make_walker(const G& grid_view)
+{
+  return Walker<G>(grid_view);
+}
 
 } // namespace Grid
 } // namespace XT
