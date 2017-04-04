@@ -402,10 +402,8 @@ public:
     } // loop over all subdomains
     // walk the global grid part
     //   * to generate the information which sudomains neighbor each other
-    for (auto entityIt = globalGridView_->template begin<0>(); entityIt != globalGridView_->template end<0>();
-         ++entityIt) {
+    for (auto&& entity : elements(*globalGridView_, Partitions::all)) {
       // find the subdomains this entity lives in
-      const EntityType& entity = *entityIt;
       const IndexType entityGlobalIndex = globalGridView_->indexSet().index(entity);
       const size_t entitySubdomain = getSubdomainOf(entityGlobalIndex);
       // get the set of this subdomains neighbors
@@ -414,9 +412,7 @@ public:
       EntityToIntersectionInfoMapType& subdomainInnerBoundaryInfo = *(subdomainInnerBoundaryInfos[entitySubdomain]);
       // walk the neighbors
       bool subdomainsEntitiesAreConnected = false;
-      for (auto&& intersectionIt = globalGridView_->ibegin(entity); intersectionIt != globalGridView_->iend(entity);
-           ++intersectionIt) {
-        const auto& intersection = *intersectionIt;
+      for (auto&& intersection : intersections(*globalGridView_, entity)) {
         // check the type of this intersection
         if (intersection.boundary() && !intersection.neighbor()) {
           // get local index of the intersection
@@ -516,13 +512,11 @@ public:
     localGridParts_ =
         std::make_shared<std::vector<std::shared_ptr<const typename LocalGridViewType::Implementation>>>(size_);
     auto& localGridParts = *localGridParts_;
-    for (typename SubdomainMapType::const_iterator subdomainIterator = subdomainToEntityMap_.begin();
-         subdomainIterator != subdomainToEntityMap_.end();
-         ++subdomainIterator) {
-      const size_t subdomain = subdomainIterator->first;
+    for (auto&& subdomainIterator : subdomainToEntityMap_) {
+      const size_t subdomain = subdomainIterator.first;
       // for the local grid part
       //   * get the geometry map
-      const std::shared_ptr<const GeometryMapType> localGeometryMap = subdomainIterator->second;
+      const std::shared_ptr<const GeometryMapType> localGeometryMap = subdomainIterator.second;
       //   * get the boundary info map
       const std::shared_ptr<const EntityToIntersectionInfoMapType> localBoundaryInfo =
           subdomainInnerBoundaryInfos[subdomain];
@@ -692,9 +686,8 @@ private:
       oversamplingSubdomainInnerBoundaryInfos[subdomain] = std::make_shared<EntityToIntersectionInfoMapType>();
       // * then walk the local grid part to find the local boundary entities
       const LocalGridViewType& localGridPart = *(localGridParts[subdomain]);
-      for (auto entityIt = localGridPart.template begin<0>(); entityIt != localGridPart.template end<0>(); ++entityIt) {
+      for (auto&& entity : elements(localGridPart, Partitions::all)) {
         // get the entity index
-        const EntityType& entity = *entityIt;
         //        const IndexType entityGlobalIndex = globalGridView_->indexSet().index(entity);
         // lets see if this is a boundary entity of the local grid part
         bool isOnLocalBoundary = false;
@@ -745,9 +738,7 @@ private:
     } // walk the subdomains to create the oversampling
 
     // now we need to create the local boundary info for the oversampling, so walk the global grid part
-    for (auto entityIt = globalGridView_->template begin<0>(); entityIt != globalGridView_->template end<0>();
-         ++entityIt) {
-      const auto& entity = *entityIt;
+    for (auto&& entity : elements(*globalGridView_, Partitions::all)) {
       const IndexType entityIndex = globalGridView_->indexSet().index(entity);
       // now we find all the oversampled subdomains this entity is a part of
       for (auto subdomainToOversamplingEntitiesMapIt : subdomainToOversamplingEntitiesMap) {
@@ -758,9 +749,7 @@ private:
             // this entity is a part of this subdomain!
             const size_t entitySubdomain = subdomainToOversamplingEntitiesMapIt.first;
             // then walk the neighbors
-            for (auto intersectionIt = globalGridView_->ibegin(entity); intersectionIt != globalGridView_->iend(entity);
-                 ++intersectionIt) {
-              const auto& intersection = *intersectionIt;
+            for (auto&& intersection : intersections(*globalGridView_, entity)) {
               if (intersection.neighbor()) {
                 const auto neighbor = intersection.outside();
                 const IndexType neighborIndex = globalGridView_->indexSet().index(neighbor);
