@@ -387,32 +387,31 @@ class CubeDdSubdomainsGridProviderFactory
 template <class GridType>
 typename std::enable_if<XT::Grid::is_grid<GridType>::value, GridProvider<GridType, DD::SubdomainGrid<GridType>>>::type
 make_cube_dd_subdomains_grid(
-    const FieldVector<typename GridType::ctype, GridType::dimension>& lower_left,
-    const FieldVector<typename GridType::ctype, GridType::dimension>& upper_right,
-    const std::array<unsigned int, GridType::dimension> num_elements =
+    const XT::Common::FieldVector<typename GridType::ctype, GridType::dimension>& lower_left,
+    const XT::Common::FieldVector<typename GridType::ctype, GridType::dimension>& upper_right,
+    const XT::Common::FieldVector<unsigned int, GridType::dimension> num_elements =
         cube_dd_subdomains_gridprovider_default_config().template get<std::array<unsigned int, GridType::dimension>>(
             "num_elements"),
     const unsigned int num_refinements =
         cube_dd_subdomains_gridprovider_default_config().template get<unsigned int>("num_refinements"),
-    const std::array<unsigned int, GridType::dimension> overlap_size =
-        cube_dd_subdomains_gridprovider_default_config().template get<std::array<unsigned int, GridType::dimension>>(
-            "overlap_size"),
-    const std::array<unsigned int, GridType::dimension> num_partitions =
-        cube_dd_subdomains_gridprovider_default_config().template get<std::array<unsigned int, GridType::dimension>>(
-            "num_partitions"),
+    const XT::Common::FieldVector<unsigned int, GridType::dimension> overlap_size =
+        cube_dd_subdomains_gridprovider_default_config().template get<std::vector<unsigned int>>("overlap_size"),
+    const XT::Common::FieldVector<unsigned int, GridType::dimension> num_partitions =
+        cube_dd_subdomains_gridprovider_default_config().template get<std::vector<unsigned int>>("num_partitions"),
     const size_t num_oversampling_layers =
         cube_dd_subdomains_gridprovider_default_config().template get<size_t>("num_refinements"),
     const size_t inner_boundary_segment_index =
         cube_dd_subdomains_gridprovider_default_config().template get<size_t>("inner_boundary_segment_index"))
 {
-  return CubeDdSubdomainsGridProviderFactory<GridType>::create(lower_left,
-                                                               upper_right,
-                                                               num_elements,
-                                                               num_refinements,
-                                                               overlap_size,
-                                                               num_partitions,
-                                                               num_oversampling_layers,
-                                                               inner_boundary_segment_index);
+  return CubeDdSubdomainsGridProviderFactory<GridType>::create(
+      lower_left,
+      upper_right,
+      XT::Common::make_array<unsigned int, GridType::dimension>(num_elements),
+      num_refinements,
+      XT::Common::make_array<unsigned int, GridType::dimension>(overlap_size),
+      XT::Common::make_array<unsigned int, GridType::dimension>(num_partitions),
+      num_oversampling_layers,
+      inner_boundary_segment_index);
 }
 
 template <class GridType>
