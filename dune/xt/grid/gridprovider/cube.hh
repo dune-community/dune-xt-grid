@@ -75,7 +75,6 @@ static inline Common::Configuration cube_dd_subdomains_gridprovider_default_conf
   return config;
 }
 
-
 template <class GridType>
 class CubeGridProviderFactory
 {
@@ -160,17 +159,7 @@ public:
         grd_ptr = StructuredGridFactory<GridType>::createSimplexGrid(lower_left, upper_right, num_elements);
         break;
     }
-    grd_ptr->loadBalance();
-#if HAVE_ALBERTA
-    if (!std::is_same<GridType, AlbertaGrid<GridType::dimension, GridType::dimension>>::value)
-#endif
-      grd_ptr->preAdapt();
-    grd_ptr->globalRefine(boost::numeric_cast<int>(num_refinements));
-#if HAVE_ALBERTA
-    if (!std::is_same<GridType, AlbertaGrid<GridType::dimension, GridType::dimension>>::value)
-#endif
-      grd_ptr->postAdapt();
-    grd_ptr->loadBalance();
+    global_refine(*grd_ptr, boost::numeric_cast<int>(num_refinements));
     return GridProvider<GridType>(grd_ptr);
   } // ... create(...)
 

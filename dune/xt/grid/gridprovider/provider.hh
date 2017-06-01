@@ -34,6 +34,24 @@ namespace Dune {
 namespace XT {
 namespace Grid {
 
+template <class GridType>
+void global_refine(GridType& grid, int num_refinements)
+{
+#if HAVE_ALBERTA
+  constexpr const bool is_alberta =
+      !std::is_same<GridType, AlbertaGrid<GridType::dimension, GridType::dimension>>::value;
+#else
+  constexpr const bool is_alberta = false;
+#endif
+
+  grid.loadBalance();
+  if (!is_alberta)
+    grid.preAdapt();
+  grid.globalRefine(num_refinements);
+  if (!is_alberta)
+    grid.postAdapt();
+  grid.loadBalance();
+}
 
 template <class GridImp, typename DdGridImp = int>
 class GridProvider
@@ -354,39 +372,9 @@ public:
     visualize_dd_helper<>()(dd_grid_ptr_, filename, with_coupling);
   }
 
-private:
-  template <class G, bool anything = true>
-  struct global_refine_helper
-  {
-    void operator()(G& g, int count)
-    {
-      g.preAdapt();
-      g.globalRefine(count);
-      g.postAdapt();
-      g.loadBalance();
-    }
-  }; // struct refine_helper
-
-#if HAVE_ALBERTA
-
-  template <int d, int dW, bool anything>
-  struct global_refine_helper<AlbertaGrid<d, dW>, anything>
-  {
-    typedef AlbertaGrid<d, dW> G;
-
-    void operator()(G& g, int count)
-    {
-      g.globalRefine(count);
-      g.loadBalance();
-    }
-  }; // struct refine_helper
-
-#endif // HAVE_ALBERTA
-
-public:
   void global_refine(int count)
   {
-    global_refine_helper<GridType>()(grid(), count);
+    global_refine(grid(), count);
   }
 
 private:
