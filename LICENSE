@@ -34,7 +34,7 @@ GNU GENERAL PUBLIC LICENSE
 
 Version 2, June 1991
 
-Copyright (C) 1989, 1991 Free Software Foundation, Inc.  
+Copyright (C) 1989, 1991 Free Software Foundation, Inc.
 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 Everyone is permitted to copy and distribute verbatim copies
@@ -130,3 +130,10 @@ itself cause the resulting executable to be covered by the GNU
 General Public License.  This exception does not however invalidate
 any other reasons why the executable file might be covered by the
 GNU General Public License.
+
+
+python/dune/xt/grid/clang/
+-------------------------
+
+These files are part of the LLVM Compiler Infrastructure and distributed
+under their own license.
