@@ -47,3 +47,20 @@ if(dune-pybindxi_FOUND)
   endif()
 endif()
 
+# dynamic interface (re)generation
+dune_add_library(dynamic_interfaces.dummy NO_EXPORT SOURCES dynamic_interfaces.dummy.cc )
+add_custom_target(regen_dynamic_interfaces
+    ${CMAKE_BINARY_DIR}/dune-env generate_dynamic_interfaces.py
+    "${CMAKE_BINARY_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    VERBATIM USES_TERMINAL)
+add_custom_target(format_dynamic_interfaces
+    COMMAND ${ClangFormat_EXECUTABLE} -i -style=file -fallback-style=none "${CMAKE_BINARY_DIR}/dynamic_interfaces.hh"
+    )
+add_custom_target(copy_dynamic_interfaces_if_different
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_BINARY_DIR}/dynamic_interfaces.hh"
+    "${CMAKE_CURRENT_SOURCE_DIR}/dynamic_interfaces.hh")
+add_custom_target(dynamic_interfaces)
+add_dependencies(copy_dynamic_interfaces_if_different format_dynamic_interfaces )
+add_dependencies(format_dynamic_interfaces regen_dynamic_interfaces)
+add_dependencies(dynamic_interfaces copy_dynamic_interfaces_if_different)

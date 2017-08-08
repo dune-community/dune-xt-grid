@@ -65,7 +65,7 @@ call is efficient.
 from ctypes import *
 import collections
 
-import clang.enumerations
+import dune.xt.clang.enumerations
 
 import sys
 if sys.version_info[0] == 3:
@@ -1427,32 +1427,6 @@ class Cursor(Structure):
         function template that is declared 'const'.
         """
         return conf.lib.clang_CXXMethod_isConst(self)
-
-    def is_converting_constructor(self):
-        """Returns True if the cursor refers to a C++ converting constructor.
-        """
-        return conf.lib.clang_CXXConstructor_isConvertingConstructor(self)
-
-    def is_copy_constructor(self):
-        """Returns True if the cursor refers to a C++ copy constructor.
-        """
-        return conf.lib.clang_CXXConstructor_isCopyConstructor(self)
-
-    def is_default_constructor(self):
-        """Returns True if the cursor refers to a C++ default constructor.
-        """
-        return conf.lib.clang_CXXConstructor_isDefaultConstructor(self)
-
-    def is_move_constructor(self):
-        """Returns True if the cursor refers to a C++ move constructor.
-        """
-        return conf.lib.clang_CXXConstructor_isMoveConstructor(self)
-
-    def is_default_method(self):
-        """Returns True if the cursor refers to a C++ member function or member
-        function template that is declared '= default'.
-        """
-        return conf.lib.clang_CXXMethod_isDefaulted(self)
 
     def is_mutable_field(self):
         """Returns True if the cursor refers to a C++ field that is declared
@@ -3279,31 +3253,11 @@ functionList = [
    [Index, c_interop_string],
    c_object_p),
 
-  ("clang_CXXConstructor_isConvertingConstructor",
-   [Cursor],
-   bool),
-
-  ("clang_CXXConstructor_isCopyConstructor",
-   [Cursor],
-   bool),
-
-  ("clang_CXXConstructor_isDefaultConstructor",
-   [Cursor],
-   bool),
-
-  ("clang_CXXConstructor_isMoveConstructor",
-   [Cursor],
-   bool),
-
   ("clang_CXXField_isMutable",
    [Cursor],
    bool),
 
   ("clang_CXXMethod_isConst",
-   [Cursor],
-   bool),
-
-  ("clang_CXXMethod_isDefaulted",
    [Cursor],
    bool),
 
@@ -3316,10 +3270,6 @@ functionList = [
    bool),
 
   ("clang_CXXMethod_isVirtual",
-   [Cursor],
-   bool),
-
-  ("clang_EnumDecl_isScoped",
    [Cursor],
    bool),
 
@@ -3724,11 +3674,6 @@ functionList = [
    Type,
    Type.from_result),
 
-  ("clang_getTypedefName",
-   [Type],
-   _CXString,
-   _CXString.from_result),
-
   ("clang_getTypeKindSpelling",
    [c_uint],
    _CXString,
@@ -3903,11 +3848,6 @@ functionList = [
    [Type],
    c_uint),
 
-  ("clang_Type_getNamedType",
-   [Type],
-   Type,
-   Type.from_result),
-
   ("clang_Type_visitFields",
    [Type, callbacks['fields_visit'], py_object],
    c_uint),
@@ -4048,7 +3988,7 @@ class Config:
         return True
 
 def register_enumerations():
-    for name, value in clang.enumerations.TokenKinds:
+    for name, value in dune.xt.clang.enumerations.TokenKinds:
         TokenKind.register(value, name)
 
 conf = Config()
