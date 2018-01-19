@@ -12,6 +12,10 @@
 #ifndef DUNE_XT_GRID_WALKER_WRAPPER_HH
 #define DUNE_XT_GRID_WALKER_WRAPPER_HH
 
+#ifndef DUNE_XT_DISABLE_LOGGING
+#include <dune/xt/common/timedlogging.hh>
+#endif
+
 #include "apply-on.hh"
 #include "functors.hh"
 
@@ -116,19 +120,33 @@ public:
   typedef typename BaseType::EntityType EntityType;
   typedef typename BaseType::IntersectionType IntersectionType;
 
-  Codim1FunctorWrapper(Codim1FunctorType& wrapped_functor, const ApplyOn::WhichIntersection<GridLayerType>* where)
+  Codim1FunctorWrapper(Codim1FunctorType& wrapped_functor,
+                       const ApplyOn::WhichIntersection<GridLayerType>* where,
+                       const std::string& id = "")
     : wrapped_functor_(wrapped_functor)
     , where_(where)
+    , id_(id)
+#ifndef DUNE_XT_DISABLE_LOGGING
+    , logger_(
+          XT::Common::TimedLogger().get("xt.grid.walker.codim1_functor_wrapper" + (id.empty() ? "" : "(" + id + ")")))
+#endif
   {
   }
 
   virtual void prepare() override final
   {
+#ifndef DUNE_XT_DISABLE_LOGGING
+    logger_.debug() << "prepare()" << std::endl;
+#endif
     wrapped_functor_.prepare();
   }
 
   virtual bool apply_on(const GridLayerType& grid_layer, const IntersectionType& intersection) const override final
   {
+#ifndef DUNE_XT_DISABLE_LOGGING
+    logger_.debug() << "apply_on(intersection.geometry().center()=" << intersection.geometry().center()
+                    << "): " << where_->apply_on(grid_layer, intersection) << std::endl;
+#endif
     return where_->apply_on(grid_layer, intersection);
   }
 
@@ -136,17 +154,30 @@ public:
                            const EntityType& inside_entity,
                            const EntityType& outside_entity) override final
   {
+#ifndef DUNE_XT_DISABLE_LOGGING
+    logger_.debug() << "apply_local(intersection.geometry().center()=" << intersection.geometry().center()
+                    << ", inside_entity.geometry().center()=" << inside_entity.geometry().center()
+                    << ", outside_entity.geometry().center()=" << outside_entity.geometry().center() << ")"
+                    << std::endl;
+#endif
     wrapped_functor_.apply_local(intersection, inside_entity, outside_entity);
   }
 
   virtual void finalize() override final
   {
+#ifndef DUNE_XT_DISABLE_LOGGING
+    logger_.debug() << "finalize()" << std::endl;
+#endif
     wrapped_functor_.finalize();
   }
 
 private:
   Codim1FunctorType& wrapped_functor_;
   std::unique_ptr<const ApplyOn::WhichIntersection<GridLayerType>> where_;
+  const std::string& id_;
+#ifndef DUNE_XT_DISABLE_LOGGING
+  mutable Common::TimedLogManager logger_;
+#endif
 }; // class Codim1FunctorWrapper
 
 template <class GridLayerType, class WalkerType>

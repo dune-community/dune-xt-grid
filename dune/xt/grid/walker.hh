@@ -111,10 +111,11 @@ public:
 
   ThisType&
   append(Functor::Codim1<GridLayerType>& functor,
-         const ApplyOn::WhichIntersection<GridLayerType>* where = new ApplyOn::AllIntersections<GridLayerType>())
+         const ApplyOn::WhichIntersection<GridLayerType>* where = new ApplyOn::AllIntersections<GridLayerType>(),
+         const std::string& id = "")
   {
     codim1_functors_.emplace_back(
-        new internal::Codim1FunctorWrapper<GridLayerType, Functor::Codim1<GridLayerType>>(functor, where));
+        new internal::Codim1FunctorWrapper<GridLayerType, Functor::Codim1<GridLayerType>>(functor, where, id));
     return *this;
   }
 
