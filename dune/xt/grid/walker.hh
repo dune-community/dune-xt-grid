@@ -102,10 +102,11 @@ public:
   }
 
   ThisType& append(Functor::Codim0<GridLayerType>& functor,
-                   const ApplyOn::WhichEntity<GridLayerType>* where = new ApplyOn::AllEntities<GridLayerType>())
+                   const ApplyOn::WhichEntity<GridLayerType>* where = new ApplyOn::AllEntities<GridLayerType>(),
+                   const std::string& id = "")
   {
     codim0_functors_.emplace_back(
-        new internal::Codim0FunctorWrapper<GridLayerType, Functor::Codim0<GridLayerType>>(functor, where));
+        new internal::Codim0FunctorWrapper<GridLayerType, Functor::Codim0<GridLayerType>>(functor, where, id));
     return *this;
   }
 

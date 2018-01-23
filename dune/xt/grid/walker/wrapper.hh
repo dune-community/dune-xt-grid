@@ -61,9 +61,16 @@ class Codim0FunctorWrapper : public Codim0Object<GridLayerType>
 public:
   typedef typename BaseType::EntityType EntityType;
 
-  Codim0FunctorWrapper(Codim0FunctorType& wrapped_functor, const ApplyOn::WhichEntity<GridLayerType>* where)
+  Codim0FunctorWrapper(Codim0FunctorType& wrapped_functor,
+                       const ApplyOn::WhichEntity<GridLayerType>* where,
+                       const std::string& id = "")
     : wrapped_functor_(wrapped_functor)
     , where_(where)
+    , id_(id)
+#ifndef DUNE_XT_DISABLE_LOGGING
+    , logger_(
+          XT::Common::TimedLogger().get("xt.grid.walker.codim0_functor_wrapper" + (id.empty() ? "" : "(" + id + ")")))
+#endif
   {
   }
 
@@ -73,27 +80,44 @@ public:
 
   virtual void prepare() override final
   {
+#ifndef DUNE_XT_DISABLE_LOGGING
+    logger_.debug() << "prepare()" << std::endl;
+#endif
     wrapped_functor_.prepare();
   }
 
   virtual bool apply_on(const GridLayerType& grid_layer, const EntityType& entity) const override final
   {
+#ifndef DUNE_XT_DISABLE_LOGGING
+    logger_.debug() << "apply_on(entity.geometry().center()=" << entity.geometry().center()
+                    << "): " << where_->apply_on(grid_layer, entity) << std::endl;
+#endif
     return where_->apply_on(grid_layer, entity);
   }
 
   virtual void apply_local(const EntityType& entity) override final
   {
+#ifndef DUNE_XT_DISABLE_LOGGING
+    logger_.debug() << "apply_local(entity.geometry().center()=" << entity.geometry().center() << ")" << std::endl;
+#endif
     wrapped_functor_.apply_local(entity);
   }
 
   virtual void finalize() override final
   {
+#ifndef DUNE_XT_DISABLE_LOGGING
+    logger_.debug() << "finalize()" << std::endl;
+#endif
     wrapped_functor_.finalize();
   }
 
 private:
   Codim0FunctorType& wrapped_functor_;
   std::unique_ptr<const ApplyOn::WhichEntity<GridLayerType>> where_;
+  const std::string id_;
+#ifndef DUNE_XT_DISABLE_LOGGING
+  mutable Common::TimedLogManager logger_;
+#endif
 }; // class Codim0FunctorWrapper
 
 template <class GridLayerType>
@@ -174,7 +198,7 @@ public:
 private:
   Codim1FunctorType& wrapped_functor_;
   std::unique_ptr<const ApplyOn::WhichIntersection<GridLayerType>> where_;
-  const std::string& id_;
+  const std::string id_;
 #ifndef DUNE_XT_DISABLE_LOGGING
   mutable Common::TimedLogManager logger_;
 #endif
