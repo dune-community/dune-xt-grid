@@ -10,7 +10,8 @@
 #      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 #          with "runtime exception" (http://www.dune-project.org/license.html)
 
-set(lib_dune_xt_grid_sources boundaryinfo/interfaces.cc)
+set(lib_dune_xt_grid_sources boundaryinfo/interfaces.cc
+                             boundaryinfo/types.cc)
 
 if(DUNE_XT_WITH_PYTHON_BINDINGS)
   list(APPEND lib_dune_xt_grid_sources
