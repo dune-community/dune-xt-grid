@@ -16,7 +16,6 @@
 
 #include <boost/numeric/conversion/cast.hpp>
 
-#include <dune/common/deprecated.hh>
 #include <dune/common/fvector.hh>
 
 #include <dune/geometry/referenceelements.hh>
@@ -35,15 +34,6 @@
 namespace Dune {
 namespace XT {
 namespace Grid {
-
-
-template <class GridPartOrViewType>
-class DUNE_DEPRECATED_MSG("Use extract_intersection_t<> instead (21.03.2017)!") Intersection
-{
-public:
-  typedef extract_intersection_t<GridPartOrViewType> Type;
-  typedef extract_intersection_t<GridPartOrViewType> type;
-};
 
 
 /**
