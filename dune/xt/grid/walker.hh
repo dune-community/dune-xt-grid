@@ -92,7 +92,7 @@ public:
   ThisType& append(ElementFunctor<GL>& functor, std::function<bool(const GL&, const ElementType&)> element_filter)
   {
     element_functor_wrappers_.emplace_back(
-        new internal::ElementFunctorWrapper<GL>(functor, new ApplyOn::LambdaFilteredEntities<GL>(element_filter)));
+        new internal::ElementFunctorWrapper<GL>(functor, new ApplyOn::LambdaFilteredElements<GL>(element_filter)));
     return *this;
   }
 
@@ -112,13 +112,13 @@ public:
   ThisType& append(std::function<void(const ElementType&)> apply_lambda,
                    ElementFilter<GL>*&& filter = new ApplyOn::AllElements<GL>())
   {
-    return this->append(new EntityLambdaFunctor<GL>(apply_lambda), std::move(filter));
+    return this->append(new ElementLambdaFunctor<GL>(apply_lambda), std::move(filter));
   }
 
   ThisType& append(std::function<void(const ElementType&)> apply_lambda,
                    std::function<bool(const GL&, const ElementType&)> filter)
   {
-    return this->append(new EntityLambdaFunctor<GL>(apply_lambda), new ApplyOn::LambdaFilteredEntities<GL>(filter));
+    return this->append(new ElementLambdaFunctor<GL>(apply_lambda), new ApplyOn::LambdaFilteredElements<GL>(filter));
   }
 
   ThisType& append(std::function<void(const ElementType&)> apply_lambda,
@@ -126,7 +126,7 @@ public:
                    std::function<void()> finalize_lambda,
                    ElementFilter<GL>*&& filter = new ApplyOn::AllElements<GL>())
   {
-    return this->append(new EntityLambdaFunctor<GL>(apply_lambda, prepare_lambda, finalize_lambda), std::move(filter));
+    return this->append(new ElementLambdaFunctor<GL>(apply_lambda, prepare_lambda, finalize_lambda), std::move(filter));
   }
 
   ThisType& append(std::function<void(const ElementType&)> apply_lambda,
@@ -134,8 +134,8 @@ public:
                    std::function<void()> finalize_lambda,
                    std::function<bool(const GL&, const ElementType&)> filter)
   {
-    return this->append(new EntityLambdaFunctor<GL>(apply_lambda, prepare_lambda, finalize_lambda),
-                        new ApplyOn::LambdaFilteredEntities<GL>(filter));
+    return this->append(new ElementLambdaFunctor<GL>(apply_lambda, prepare_lambda, finalize_lambda),
+                        new ApplyOn::LambdaFilteredElements<GL>(filter));
   }
 
   /**
@@ -215,7 +215,7 @@ public:
   {
     if (&functor == this)
       DUNE_THROW(Common::Exceptions::you_are_using_this_wrong, "Do not append a Walker to itself!");
-    entity_and_intersection_functor_wrappers_.emplace_back(new internal::ElementAndIntersectionFunctorWrapper<GL>(
+    element_and_intersection_functor_wrappers_.emplace_back(new internal::ElementAndIntersectionFunctorWrapper<GL>(
         functor, std::move(element_filter), std::move(intersection_filter)));
     return *this;
   }
@@ -226,7 +226,7 @@ public:
   {
     if (&functor == this)
       DUNE_THROW(Common::Exceptions::you_are_using_this_wrong, "Do not append a Walker to itself!");
-    entity_and_intersection_functor_wrappers_.emplace_back(new internal::ElementAndIntersectionFunctorWrapper<GL>(
+    element_and_intersection_functor_wrappers_.emplace_back(new internal::ElementAndIntersectionFunctorWrapper<GL>(
         functor, std::move(element_filter), std::move(intersection_filter)));
     return *this;
   }
@@ -237,9 +237,9 @@ public:
   {
     if (&functor == this)
       DUNE_THROW(Common::Exceptions::you_are_using_this_wrong, "Do not append a Walker to itself!");
-    entity_and_intersection_functor_wrappers_.emplace_back(new internal::ElementAndIntersectionFunctorWrapper<GL>(
+    element_and_intersection_functor_wrappers_.emplace_back(new internal::ElementAndIntersectionFunctorWrapper<GL>(
         functor,
-        new ApplyOn::LambdaFilteredEntities<GL>(element_filter),
+        new ApplyOn::LambdaFilteredElements<GL>(element_filter),
         new ApplyOn::LambdaFilteredIntersections<GL>(intersection_filter)));
     return *this;
   }
@@ -250,89 +250,89 @@ public:
   {
     if (functor == this)
       DUNE_THROW(Common::Exceptions::you_are_using_this_wrong, "Do not append a Walker to itself!");
-    entity_and_intersection_functor_wrappers_.emplace_back(new internal::ElementAndIntersectionFunctorWrapper<GL>(
+    element_and_intersection_functor_wrappers_.emplace_back(new internal::ElementAndIntersectionFunctorWrapper<GL>(
         std::move(functor), std::move(element_filter), std::move(intersection_filter)));
     return *this;
   }
 
   /**
    * \}
-   * \name These methods can be used to append entity and intersection lambda expressions.
+   * \name These methods can be used to append element and intersection lambda expressions.
    * \{
    */
 
   ThisType&
-  append(std::function<void(const ElementType&)> entity_apply_on,
+  append(std::function<void(const ElementType&)> element_apply_on,
          std::function<void(const IntersectionType&, const ElementType&, const ElementType&)> intersection_apply_on,
          ElementFilter<GL>*&& element_filter = new ApplyOn::AllElements<GL>(),
          IntersectionFilter<GL>*&& intersection_filter = new ApplyOn::AllIntersections<GL>())
   {
-    return this->append(new EntityAndIntersectionLambdaFunctor<GL>(entity_apply_on, intersection_apply_on),
+    return this->append(new ElementAndIntersectionLambdaFunctor<GL>(element_apply_on, intersection_apply_on),
                         std::move(element_filter),
                         std::move(intersection_filter));
   }
 
   ThisType&
-  append(std::function<void(const ElementType&)> entity_apply_on,
+  append(std::function<void(const ElementType&)> element_apply_on,
          std::function<void(const IntersectionType&, const ElementType&, const ElementType&)> intersection_apply_on,
          IntersectionFilter<GL>*&& intersection_filter,
          ElementFilter<GL>*&& element_filter = new ApplyOn::AllElements<GL>())
   {
-    return this->append(new EntityAndIntersectionLambdaFunctor<GL>(entity_apply_on, intersection_apply_on),
+    return this->append(new ElementAndIntersectionLambdaFunctor<GL>(element_apply_on, intersection_apply_on),
                         std::move(element_filter),
                         std::move(intersection_filter));
   }
 
   ThisType&
-  append(std::function<void(const ElementType&)> entity_apply_on,
+  append(std::function<void(const ElementType&)> element_apply_on,
          std::function<void(const IntersectionType&, const ElementType&, const ElementType&)> intersection_apply_on,
          std::function<bool(const GL&, const ElementType&)> element_filter,
          std::function<bool(const GL&, const IntersectionType&)> intersection_filter)
   {
-    return this->append(new EntityAndIntersectionLambdaFunctor<GL>(entity_apply_on, intersection_apply_on),
-                        new ApplyOn::LambdaFilteredEntities<GL>(element_filter),
+    return this->append(new ElementAndIntersectionLambdaFunctor<GL>(element_apply_on, intersection_apply_on),
+                        new ApplyOn::LambdaFilteredElements<GL>(element_filter),
                         new ApplyOn::LambdaFilteredIntersections<GL>(intersection_filter));
   }
 
   ThisType&
-  append(std::function<void(const ElementType&)> entity_apply_on,
+  append(std::function<void(const ElementType&)> element_apply_on,
          std::function<void(const IntersectionType&, const ElementType&, const ElementType&)> intersection_apply_on,
          std::function<void()> prepare_lambda,
          std::function<void()> finalize_lambda,
          ElementFilter<GL>*&& element_filter = new ApplyOn::AllElements<GL>(),
          IntersectionFilter<GL>*&& intersection_filter = new ApplyOn::AllIntersections<GL>())
   {
-    return this->append(new EntityAndIntersectionLambdaFunctor<GL>(
-                            entity_apply_on, intersection_apply_on, prepare_lambda, finalize_lambda),
+    return this->append(new ElementAndIntersectionLambdaFunctor<GL>(
+                            element_apply_on, intersection_apply_on, prepare_lambda, finalize_lambda),
                         std::move(element_filter),
                         std::move(intersection_filter));
   }
 
   ThisType&
-  append(std::function<void(const ElementType&)> entity_apply_on,
+  append(std::function<void(const ElementType&)> element_apply_on,
          std::function<void(const IntersectionType&, const ElementType&, const ElementType&)> intersection_apply_on,
          std::function<void()> prepare_lambda,
          std::function<void()> finalize_lambda,
          IntersectionFilter<GL>*&& intersection_filter,
          ElementFilter<GL>*&& element_filter = new ApplyOn::AllElements<GL>())
   {
-    return this->append(new EntityAndIntersectionLambdaFunctor<GL>(
-                            entity_apply_on, intersection_apply_on, prepare_lambda, finalize_lambda),
+    return this->append(new ElementAndIntersectionLambdaFunctor<GL>(
+                            element_apply_on, intersection_apply_on, prepare_lambda, finalize_lambda),
                         std::move(element_filter),
                         std::move(intersection_filter));
   }
 
   ThisType&
-  append(std::function<void(const ElementType&)> entity_apply_on,
+  append(std::function<void(const ElementType&)> element_apply_on,
          std::function<void(const IntersectionType&, const ElementType&, const ElementType&)> intersection_apply_on,
          std::function<void()> prepare_lambda,
          std::function<void()> finalize_lambda,
          std::function<bool(const GL&, const ElementType&)> element_filter,
          std::function<bool(const GL&, const IntersectionType&)> intersection_filter)
   {
-    return this->append(new EntityAndIntersectionLambdaFunctor<GL>(
-                            entity_apply_on, intersection_apply_on, prepare_lambda, finalize_lambda),
-                        new ApplyOn::LambdaFilteredEntities<GL>(element_filter),
+    return this->append(new ElementAndIntersectionLambdaFunctor<GL>(
+                            element_apply_on, intersection_apply_on, prepare_lambda, finalize_lambda),
+                        new ApplyOn::LambdaFilteredElements<GL>(element_filter),
                         new ApplyOn::LambdaFilteredIntersections<GL>(intersection_filter));
   }
 
@@ -353,7 +353,7 @@ public:
   {
     if (&other_walker == this)
       DUNE_THROW(Common::Exceptions::you_are_using_this_wrong, "Do not append a Walker to itself!");
-    entity_and_intersection_functor_wrappers_.emplace_back(
+    element_and_intersection_functor_wrappers_.emplace_back(
         new internal::WalkerWrapper<GL>(other_walker, std::move(element_filter), std::move(intersection_filter)));
     return *this;
   }
@@ -369,7 +369,7 @@ public:
   {
     if (&other_walker == this)
       DUNE_THROW(Common::Exceptions::you_are_using_this_wrong, "Do not append a Walker to itself!");
-    entity_and_intersection_functor_wrappers_.emplace_back(
+    element_and_intersection_functor_wrappers_.emplace_back(
         new internal::WalkerWrapper<GL>(other_walker, std::move(element_filter), std::move(intersection_filter)));
     return *this;
   }
@@ -385,9 +385,9 @@ public:
   {
     if (&other_walker == this)
       DUNE_THROW(Common::Exceptions::you_are_using_this_wrong, "Do not append a Walker to itself!");
-    entity_and_intersection_functor_wrappers_.emplace_back(
+    element_and_intersection_functor_wrappers_.emplace_back(
         new internal::WalkerWrapper<GL>(other_walker,
-                                        new ApplyOn::LambdaFilteredEntities<GL>(element_filter),
+                                        new ApplyOn::LambdaFilteredElements<GL>(element_filter),
                                         new ApplyOn::LambdaFilteredIntersections<GL>(intersection_filter)));
     return *this;
   }
@@ -404,33 +404,33 @@ public:
       wraper->functor().prepare();
     for (auto& wraper : intersection_functor_wrappers_)
       wraper->functor().prepare();
-    for (auto& wraper : entity_and_intersection_functor_wrappers_)
+    for (auto& wraper : element_and_intersection_functor_wrappers_)
       wraper->functor().prepare();
   } // ... prepare()
 
-  virtual void apply_local(const ElementType& entity) override
+  virtual void apply_local(const ElementType& element) override
   {
     for (auto& wraper : element_functor_wrappers_) {
-      if (wraper->filter().contains(grid_view_, entity))
-        wraper->functor().apply_local(entity);
+      if (wraper->filter().contains(grid_view_, element))
+        wraper->functor().apply_local(element);
     }
-    for (auto& wraper : entity_and_intersection_functor_wrappers_) {
-      if (wraper->element_filter().contains(grid_view_, entity))
-        wraper->functor().apply_local(entity);
+    for (auto& wraper : element_and_intersection_functor_wrappers_) {
+      if (wraper->element_filter().contains(grid_view_, element))
+        wraper->functor().apply_local(element);
     }
   } // ... apply_local(...)
 
   virtual void apply_local(const IntersectionType& intersection,
-                           const ElementType& inside_entity,
-                           const ElementType& outside_entity) override
+                           const ElementType& inside_element,
+                           const ElementType& outside_element) override
   {
     for (auto& wraper : intersection_functor_wrappers_) {
       if (wraper->filter().contains(grid_view_, intersection))
-        wraper->functor().apply_local(intersection, inside_entity, outside_entity);
+        wraper->functor().apply_local(intersection, inside_element, outside_element);
     }
-    for (auto& wraper : entity_and_intersection_functor_wrappers_) {
+    for (auto& wraper : element_and_intersection_functor_wrappers_) {
       if (wraper->intersection_filter().contains(grid_view_, intersection))
-        wraper->functor().apply_local(intersection, inside_entity, outside_entity);
+        wraper->functor().apply_local(intersection, inside_element, outside_element);
     }
   } // ... apply_local(...)
 
@@ -440,7 +440,7 @@ public:
       wraper->functor().finalize();
     for (auto& wraper : intersection_functor_wrappers_)
       wraper->functor().finalize();
-    for (auto& wraper : entity_and_intersection_functor_wrappers_)
+    for (auto& wraper : element_and_intersection_functor_wrappers_)
       wraper->functor().finalize();
   } // ... finalize()
 
@@ -466,7 +466,7 @@ public:
 
     // only do something, if we have to
     if ((element_functor_wrappers_.size() + intersection_functor_wrappers_.size()
-         + entity_and_intersection_functor_wrappers_.size())
+         + element_and_intersection_functor_wrappers_.size())
         > 0) {
       walk_range(elements(grid_view_));
     } // only do something, if we have to
@@ -482,7 +482,7 @@ public:
   {
     element_functor_wrappers_.clear();
     intersection_functor_wrappers_.clear();
-    entity_and_intersection_functor_wrappers_.clear();
+    element_and_intersection_functor_wrappers_.clear();
   }
 
 #if HAVE_TBB
@@ -529,7 +529,7 @@ public:
 
     // only do something, if we have to
     if ((element_functor_wrappers_.size() + intersection_functor_wrappers_.size()
-         + entity_and_intersection_functor_wrappers_.size())
+         + element_and_intersection_functor_wrappers_.size())
         > 0) {
       tbb::blocked_range<std::size_t> range(0, partitioning.partitions());
       Body<PartioningType, ThisType> body(*this, partitioning);
@@ -546,35 +546,35 @@ public:
 #endif // HAVE_TBB
 
 protected:
-  template <class EntityRange>
-  void walk_range(const EntityRange& entity_range)
+  template <class ElementRange>
+  void walk_range(const ElementRange& element_range)
   {
 #ifdef __INTEL_COMPILER
-    const auto it_end = entity_range.end();
-    for (auto it = entity_range.begin(); it != it_end; ++it) {
-      const ElementType& entity = *it;
+    const auto it_end = element_range.end();
+    for (auto it = element_range.begin(); it != it_end; ++it) {
+      const ElementType& element = *it;
 #else
-    for (const ElementType& entity : entity_range) {
+    for (const ElementType& element : element_range) {
 #endif
-      // apply entity functors
-      apply_local(entity);
+      // apply element functors
+      apply_local(element);
 
       // only walk the intersections, if there are codim1 functors present
-      if ((intersection_functor_wrappers_.size() + entity_and_intersection_functor_wrappers_.size()) > 0) {
+      if ((intersection_functor_wrappers_.size() + element_and_intersection_functor_wrappers_.size()) > 0) {
         // Do not use intersections(...) here, since that does not work for a SubdomainGridPart which is based on
         // alugrid and then wrapped as a grid view (see also https://github.com/dune-community/dune-xt-grid/issues/26)
-        const auto intersection_it_end = grid_view_.iend(entity);
-        for (auto intersection_it = grid_view_.ibegin(entity); intersection_it != intersection_it_end;
+        const auto intersection_it_end = grid_view_.iend(element);
+        for (auto intersection_it = grid_view_.ibegin(element); intersection_it != intersection_it_end;
              ++intersection_it) {
           const auto& intersection = *intersection_it;
           if (intersection.neighbor()) {
             const auto neighbor = intersection.outside();
-            apply_local(intersection, entity, neighbor);
+            apply_local(intersection, element, neighbor);
           } else
-            apply_local(intersection, entity, entity);
+            apply_local(intersection, element, element);
         } // walk the intersections
       } // only walk the intersections, if there are codim1 functors present
-    } // .. walk entities
+    } // .. walk elements
   } // ... walk_range(...)
 
   friend class internal::WalkerWrapper<GridViewType>;
@@ -583,7 +583,7 @@ protected:
   std::list<std::shared_ptr<internal::ElementFunctorWrapper<GridViewType>>> element_functor_wrappers_;
   std::list<std::shared_ptr<internal::IntersectionFunctorWrapper<GridViewType>>> intersection_functor_wrappers_;
   std::list<std::shared_ptr<internal::ElementAndIntersectionFunctorWrapper<GridViewType>>>
-      entity_and_intersection_functor_wrappers_;
+      element_and_intersection_functor_wrappers_;
 }; // class Walker
 
 

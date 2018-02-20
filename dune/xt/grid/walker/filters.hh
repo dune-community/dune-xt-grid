@@ -205,7 +205,7 @@ public:
  *  \brief A filter which selects entities based on a lambda expression.
  */
 template <class GL>
-class LambdaFilteredEntities : public ElementFilter<GL>
+class LambdaFilteredElements : public ElementFilter<GL>
 {
   using BaseType = ElementFilter<GL>;
 
@@ -214,14 +214,14 @@ public:
   using typename BaseType::ElementType;
   using LambdaType = std::function<bool(const GridViewType&, const ElementType&)>;
 
-  explicit LambdaFilteredEntities(LambdaType lambda)
+  explicit LambdaFilteredElements(LambdaType lambda)
     : lambda_(lambda)
   {
   }
 
   ElementFilter<GridViewType>* copy() const override final
   {
-    return new LambdaFilteredEntities<GridViewType>(lambda_);
+    return new LambdaFilteredElements<GridViewType>(lambda_);
   }
 
   bool contains(const GridViewType& grid_layer, const ElementType& element) const override final
@@ -231,7 +231,7 @@ public:
 
 private:
   const LambdaType lambda_;
-}; // class LambdaFilteredEntities
+}; // class LambdaFilteredElements
 
 
 /**
