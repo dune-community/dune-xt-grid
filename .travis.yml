@@ -61,29 +61,21 @@ jobs:
     env: DOCKER_TAG=gcc_full TESTS=0
   - stage: test_cpp
     env: DOCKER_TAG=gcc_full TESTS=1
-  - stage: test_cpp
-    env: DOCKER_TAG=gcc_full TESTS=2
     
   - stage: test_cpp
     env: DOCKER_TAG=gcc_no_istl_no_disc TESTS=0
   - stage: test_cpp
     env: DOCKER_TAG=gcc_no_istl_no_disc TESTS=1
-  - stage: test_cpp
-    env: DOCKER_TAG=gcc_no_istl_no_disc TESTS=2
     
   - stage: test_cpp
     env: DOCKER_TAG=gcc_no_disc TESTS=0
   - stage: test_cpp
     env: DOCKER_TAG=gcc_no_disc TESTS=1
-  - stage: test_cpp
-    env: DOCKER_TAG=gcc_no_disc TESTS=2
     
   - stage: test_cpp
     env: DOCKER_TAG=clang_full TESTS=0
   - stage: test_cpp
     env: DOCKER_TAG=clang_full TESTS=1
-  - stage: test_cpp
-    env: DOCKER_TAG=clang_full TESTS=2
     
   - stage: test_python
     env: DOCKER_TAG=gcc_full
