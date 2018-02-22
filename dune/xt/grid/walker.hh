@@ -496,7 +496,7 @@ public:
 
 #endif // HAVE_TBB
 
-protected:
+private:
   template <class ElementRange>
   void walk_range(const ElementRange& element_range)
   {
