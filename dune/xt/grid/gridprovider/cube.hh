@@ -337,11 +337,9 @@ public:
     // global grid part
     const auto global_grid_part = factory.globalGridView();
     // walk the grid
-    const auto entity_it_end = global_grid_part->template end<0, All_Partition>();
-    for (auto entity_it = global_grid_part->template begin<0, All_Partition>(); entity_it != entity_it_end;
-         ++entity_it) {
+
+    for (auto&& entity : elements(*global_grid_part, Partitions::all)) {
       // get center of entity
-      const auto& entity = *entity_it;
       const auto center = entity.geometry().center();
       // decide on the subdomain this entity shall belong to
       std::vector<size_t> whichPartition(GridType::dimension, 0);
