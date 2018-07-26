@@ -23,7 +23,6 @@
 #include <tbb/tbb_stddef.h>
 #endif
 
-#include <dune/common/deprecated.hh>
 #include <dune/common/unused.hh>
 #include <dune/common/version.hh>
 
@@ -33,197 +32,384 @@
 #include <dune/xt/grid/parallel/partitioning/ranged.hh>
 #endif
 #include <dune/xt/common/parallel/threadmanager.hh>
+#include <dune/xt/common/parallel/threadstorage.hh>
 #include <dune/xt/common/ranges.hh>
 #include <dune/xt/common/unused.hh>
 #include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/grid/dd/subdomains/grid.hh>
 #include <dune/xt/grid/grids.hh>
 #include <dune/xt/grid/layers.hh>
+#include <dune/xt/grid/functors/interfaces.hh>
+#include <dune/xt/grid/functors/lambda.hh>
 #include <dune/xt/grid/type_traits.hh>
 
-#include <dune/xt/grid/walker/apply-on.hh>
-#include <dune/xt/grid/walker/functors.hh>
-#include <dune/xt/grid/walker/wrapper.hh>
+#include "walker/filters.hh"
+#include "walker/wrapper.hh"
 
 namespace Dune {
 namespace XT {
+
+static const std::function<void()> dxt_void_noop = [](...) {};
+
 namespace Grid {
 
 
-template <class GridLayerImp>
-class Walker : public Functor::Codim0And1<GridLayerImp>
+template <class GL>
+class Walker : public ElementAndIntersectionFunctor<GL>
 {
-  static_assert(is_layer<GridLayerImp>::value, "");
-  typedef Walker<GridLayerImp> ThisType;
+  using BaseType = ElementAndIntersectionFunctor<GL>;
+  using ThisType = Walker<GL>;
 
 public:
-  typedef GridLayerImp GridLayerType;
-  using EntityType = extract_entity_t<GridLayerType>;
-  using IntersectionType = extract_intersection_t<GridLayerType>;
+  using typename BaseType::GridViewType;
+  using typename BaseType::ElementType;
+  using typename BaseType::IntersectionType;
 
-  explicit Walker(GridLayerType grd_lr)
-    : grid_layer_(grd_lr)
+private:
+  using IntersectionElementElementFunction =
+      std::function<void(const IntersectionType&, const ElementType&, const ElementType&)>;
+  using ElementFunction = std::function<void(const ElementType&)>;
+  using ViewElementFunction = std::function<bool(const GL&, const ElementType&)>;
+  using ViewIntersectionFunction = std::function<bool(const GL&, const IntersectionType&)>;
+  using VoidFunction = std::function<void()>;
+
+  template <typename WrapperType, class... Args>
+  void emplace_all(Common::PerThreadValue<std::list<std::shared_ptr<WrapperType>>>& thread_storage, Args&&... args)
+  {
+    for (auto&& local_list : thread_storage) {
+      local_list.emplace_back(new WrapperType(std::forward<Args>(args)...));
+    }
+  }
+
+public:
+  explicit Walker(GridViewType grd_vw)
+    : grid_view_(grd_vw)
   {
   }
 
-  /// \sa https://github.com/dune-community/dune-gdt/issues/89
-  Walker(const Walker& other) = delete; // <- b.c. of the functors: type-erasue = no copy!
-
-  Walker(Walker&& source) = default;
-
-  const GridLayerType& grid_layer() const
+  Walker(const ThisType& other)
+    : BaseType()
+    , grid_view_(other.grid_view_)
   {
-    return grid_layer_;
+    // Since all Common::PerThreadValue are created with the same size given by the global singleton threadManage(),
+    // we just assume they are of the same size!
+    // Copy the element functors ...
+    auto zip_emplace = [](auto& target_thread_ctr, const auto& source_thread_ctr, auto& gen_function) {
+      auto target_wrappers_it = target_thread_ctr.begin();
+      auto source_wrappers_it = source_thread_ctr.begin();
+      for (; target_wrappers_it != target_thread_ctr.end() && source_wrappers_it != source_thread_ctr.end();
+           ++target_wrappers_it, ++source_wrappers_it) {
+        auto& target__wrappers = *target_wrappers_it;
+        for (auto&& source_wrapper : *source_wrappers_it) {
+          target__wrappers.emplace_back(gen_function(*source_wrapper));
+        }
+      }
+    };
+    auto el_wrapper = [](auto&& wrapper) {
+      return new typename std::decay<decltype(wrapper)>::type(wrapper.functor(), wrapper.filter());
+    };
+    zip_emplace(element_functor_wrappers_, other.element_functor_wrappers_, el_wrapper);
+    zip_emplace(intersection_functor_wrappers_, other.intersection_functor_wrappers_, el_wrapper);
+
+    auto elint_wrapper = [](auto&& wrapper) {
+      return new typename std::decay<decltype(wrapper)>::type(
+          wrapper.functor(), wrapper.element_filter(), wrapper.intersection_filter());
+    };
+    zip_emplace(
+        element_and_intersection_functor_wrappers_, other.element_and_intersection_functor_wrappers_, elint_wrapper);
+  } // Walker(...)
+
+  Walker(ThisType&& source) = default;
+
+  virtual ~Walker() = default;
+
+  const GridViewType& grid_view() const
+  {
+    return grid_view_;
   }
 
-  GridLayerType& grid_layer()
+  GridViewType& grid_view()
   {
-    return grid_layer_;
+    return grid_view_;
   }
 
-  ThisType& append(std::function<void(const EntityType&)> lambda,
-                   const ApplyOn::WhichEntity<GridLayerType>* where = new ApplyOn::AllEntities<GridLayerType>())
+  /**
+   * \name These methods can be used to append an \sa ElementFunctor.
+   * \{
+   */
+
+  ThisType& append(ElementFunctor<GL>& functor, const ElementFilter<GL>& filter = ApplyOn::AllElements<GL>())
   {
-    codim0_functors_.emplace_back(new internal::Codim0LambdaWrapper<GridLayerType>(lambda, where));
+    emplace_all(element_functor_wrappers_, functor, filter);
     return *this;
   }
 
-  ThisType&
-  append(std::function<void(const IntersectionType&, const EntityType&, const EntityType&)> lambda,
-         const ApplyOn::WhichIntersection<GridLayerType>* where = new ApplyOn::AllIntersections<GridLayerType>())
+  ThisType& append(ElementFunctor<GL>*&& functor, const ElementFilter<GL>& filter = ApplyOn::AllElements<GL>())
   {
-    codim1_functors_.emplace_back(new internal::Codim1LambdaWrapper<GridLayerType>(lambda, where));
+    emplace_all(element_functor_wrappers_, *functor, filter);
+    delete functor;
     return *this;
   }
 
-  ThisType& append(Functor::Codim0<GridLayerType>& functor,
-                   const ApplyOn::WhichEntity<GridLayerType>* where = new ApplyOn::AllEntities<GridLayerType>())
+  ThisType& append(ElementFunctor<GL>& functor, ViewElementFunction element_filter)
   {
-    codim0_functors_.emplace_back(
-        new internal::Codim0FunctorWrapper<GridLayerType, Functor::Codim0<GridLayerType>>(functor, where));
+    emplace_all(element_functor_wrappers_, functor, ApplyOn::LambdaFilteredElements<GL>(element_filter));
     return *this;
   }
 
-  ThisType&
-  append(Functor::Codim1<GridLayerType>& functor,
-         const ApplyOn::WhichIntersection<GridLayerType>* where = new ApplyOn::AllIntersections<GridLayerType>())
+  ThisType& append(ElementFunctor<GL>*&& functor, ViewElementFunction element_filter)
   {
-    codim1_functors_.emplace_back(
-        new internal::Codim1FunctorWrapper<GridLayerType, Functor::Codim1<GridLayerType>>(functor, where));
+    emplace_all(element_functor_wrappers_, *functor, ApplyOn::LambdaFilteredElements<GL>(element_filter));
+    delete functor;
     return *this;
   }
 
-  ThisType&
-  append(Functor::Codim0And1<GridLayerType>& functor,
-         const ApplyOn::WhichEntity<GridLayerType>* which_entities = new ApplyOn::AllEntities<GridLayerType>(),
-         const ApplyOn::WhichIntersection<GridLayerType>* which_intersections =
-             new ApplyOn::AllIntersections<GridLayerType>())
+  /**
+   * \}
+   * \name These methods can be used to append an element lambda expression.
+   * \{
+   */
+
+  ThisType& append(ElementFunction apply_lambda,
+                   const ElementFilter<GL>& filter = ApplyOn::AllElements<GL>(),
+                   VoidFunction prepare_lambda = dxt_void_noop,
+                   VoidFunction finalize_lambda = dxt_void_noop)
   {
-    codim0_functors_.emplace_back(
-        new internal::Codim0FunctorWrapper<GridLayerType, Functor::Codim0And1<GridLayerType>>(functor, which_entities));
-    codim1_functors_.emplace_back(new internal::Codim1FunctorWrapper<GridLayerType, Functor::Codim0And1<GridLayerType>>(
-        functor, which_intersections));
+    return this->append(new ElementLambdaFunctor<GL>(apply_lambda, prepare_lambda, finalize_lambda), filter);
+  }
+
+  ThisType& append(ElementFunction apply_lambda,
+                   ViewElementFunction filter,
+                   VoidFunction prepare_lambda = dxt_void_noop,
+                   VoidFunction finalize_lambda = dxt_void_noop)
+  {
+    return this->append(new ElementLambdaFunctor<GL>(apply_lambda, prepare_lambda, finalize_lambda),
+                        ApplyOn::LambdaFilteredElements<GL>(filter));
+  }
+
+  /**
+   * \}
+   * \name These methods can be used to append an \sa IntersectionFunctor.
+   * \{
+   */
+
+  ThisType& append(IntersectionFunctor<GL>& functor,
+                   const IntersectionFilter<GL>& filter = ApplyOn::AllIntersections<GL>())
+  {
+    emplace_all(intersection_functor_wrappers_, functor, filter);
     return *this;
   }
 
-  ThisType&
-  append(Functor::Codim0And1<GridLayerType>& functor,
-         const ApplyOn::WhichIntersection<GridLayerType>* which_intersections,
-         const ApplyOn::WhichEntity<GridLayerType>* which_entities = new ApplyOn::AllEntities<GridLayerType>())
+  ThisType& append(IntersectionFunctor<GL>*&& functor,
+                   const IntersectionFilter<GL>& filter = ApplyOn::AllIntersections<GL>())
   {
-    codim0_functors_.emplace_back(
-        new internal::Codim0FunctorWrapper<GridLayerType, Functor::Codim0And1<GridLayerType>>(functor, which_entities));
-    codim1_functors_.emplace_back(new internal::Codim1FunctorWrapper<GridLayerType, Functor::Codim0And1<GridLayerType>>(
-        functor, which_intersections));
+    emplace_all(intersection_functor_wrappers_, *functor, filter);
+    delete functor;
     return *this;
   }
 
-  ThisType&
-  append(ThisType& other,
-         const ApplyOn::WhichEntity<GridLayerType>* which_entities = new ApplyOn::AllEntities<GridLayerType>(),
-         const ApplyOn::WhichIntersection<GridLayerType>* which_intersections =
-             new ApplyOn::AllIntersections<GridLayerType>())
+  ThisType& append(IntersectionFunctor<GL>& functor, ViewIntersectionFunction filter)
   {
-    if (&other == this)
+    emplace_all(intersection_functor_wrappers_, functor, ApplyOn::LambdaFilteredIntersections<GL>(filter));
+    return *this;
+  }
+
+  ThisType& append(IntersectionFunctor<GL>*&& functor, ViewIntersectionFunction filter)
+  {
+    emplace_all(intersection_functor_wrappers_, *functor, ApplyOn::LambdaFilteredIntersections<GL>(filter));
+    delete functor;
+    return *this;
+  }
+
+  /**
+   * \}
+   * \name These methods can be used to append an intersection lambda expression.
+   * \{
+   */
+
+  ThisType& append(IntersectionElementElementFunction apply_lambda,
+                   const IntersectionFilter<GL>& filter = ApplyOn::AllIntersections<GL>(),
+                   VoidFunction prepare_lambda = dxt_void_noop,
+                   VoidFunction finalize_lambda = dxt_void_noop)
+  {
+    return this->append(new IntersectionLambdaFunctor<GL>(apply_lambda, prepare_lambda, finalize_lambda), filter);
+  }
+
+  ThisType& append(IntersectionElementElementFunction apply_lambda,
+                   ViewIntersectionFunction filter,
+                   VoidFunction prepare_lambda = dxt_void_noop,
+                   VoidFunction finalize_lambda = dxt_void_noop)
+  {
+    return this->append(new IntersectionLambdaFunctor<GL>(apply_lambda, prepare_lambda, finalize_lambda),
+                        ApplyOn::LambdaFilteredIntersections<GL>(filter));
+  }
+
+  /**
+   * \}
+   * \name These methods can be used to append an \sa ElementAndIntersectionFunctor.
+   * \{
+   */
+
+  ThisType& append(ElementAndIntersectionFunctor<GL>& functor,
+                   const IntersectionFilter<GL>& intersection_filter = ApplyOn::AllIntersections<GL>(),
+                   const ElementFilter<GL>& element_filter = ApplyOn::AllElements<GL>())
+  {
+    if (&functor == this)
       DUNE_THROW(Common::Exceptions::you_are_using_this_wrong, "Do not append a Walker to itself!");
-    codim0_functors_.emplace_back(new internal::WalkerWrapper<GridLayerType, ThisType>(other, which_entities));
-    codim1_functors_.emplace_back(new internal::WalkerWrapper<GridLayerType, ThisType>(other, which_intersections));
+    emplace_all(element_and_intersection_functor_wrappers_, functor, element_filter, intersection_filter);
     return *this;
-  } // ... append(...)
+  }
 
-  ThisType&
-  append(ThisType& other,
-         const ApplyOn::WhichIntersection<GridLayerType>* which_intersections,
-         const ApplyOn::WhichEntity<GridLayerType>* which_entities = new ApplyOn::AllEntities<GridLayerType>())
+  ThisType& append(ElementAndIntersectionFunctor<GL>*&& functor,
+                   const IntersectionFilter<GL>& intersection_filter = ApplyOn::AllIntersections<GL>(),
+                   const ElementFilter<GL>& element_filter = ApplyOn::AllElements<GL>())
   {
-    if (&other == this)
+    if (functor == this)
       DUNE_THROW(Common::Exceptions::you_are_using_this_wrong, "Do not append a Walker to itself!");
-    codim0_functors_.emplace_back(new internal::WalkerWrapper<GridLayerType, ThisType>(other, which_entities));
-    codim1_functors_.emplace_back(new internal::WalkerWrapper<GridLayerType, ThisType>(other, which_intersections));
+    emplace_all(element_and_intersection_functor_wrappers_, *functor, element_filter, intersection_filter);
+    delete functor;
     return *this;
-  } // ... append(...)
+  }
 
-  void clear()
+  ThisType& append(ElementAndIntersectionFunctor<GL>& functor,
+                   ViewElementFunction element_filter,
+                   ViewIntersectionFunction intersection_filter)
   {
-    codim0_functors_.clear();
-    codim1_functors_.clear();
-  } // ... clear()
+    if (&functor == this)
+      DUNE_THROW(Common::Exceptions::you_are_using_this_wrong, "Do not append a Walker to itself!");
+    emplace_all(element_and_intersection_functor_wrappers_,
+                functor,
+                ApplyOn::LambdaFilteredElements<GL>(element_filter),
+                ApplyOn::LambdaFilteredIntersections<GL>(intersection_filter));
+    return *this;
+  }
 
-  virtual void prepare()
+  ThisType& append(ElementAndIntersectionFunctor<GL>*&& functor,
+                   ViewElementFunction element_filter,
+                   ViewIntersectionFunction intersection_filter)
   {
-    for (auto& functor : codim0_functors_)
-      functor->prepare();
-    for (auto& functor : codim1_functors_)
-      functor->prepare();
+    if (functor == this)
+      DUNE_THROW(Common::Exceptions::you_are_using_this_wrong, "Do not append a Walker to itself!");
+    emplace_all(element_and_intersection_functor_wrappers_,
+                *functor,
+                ApplyOn::LambdaFilteredElements<GL>(element_filter),
+                ApplyOn::LambdaFilteredIntersections<GL>(intersection_filter));
+    delete functor;
+    return *this;
+  }
+
+  /**
+   * \}
+   * \name These methods can be used to append element and intersection lambda expressions.
+   * \{
+   */
+
+  ThisType& append(ElementFunction element_apply_on,
+                   IntersectionElementElementFunction intersection_apply_on,
+                   ViewElementFunction element_filter,
+                   ViewIntersectionFunction intersection_filter)
+  {
+    return this->append(new ElementAndIntersectionLambdaFunctor<GL>(element_apply_on, intersection_apply_on),
+                        ApplyOn::LambdaFilteredElements<GL>(element_filter),
+                        ApplyOn::LambdaFilteredIntersections<GL>(intersection_filter));
+  }
+
+  ThisType& append(ElementFunction element_apply_on,
+                   IntersectionElementElementFunction intersection_apply_on,
+                   const ElementFilter<GL>& element_filter = ApplyOn::AllElements<GL>(),
+                   const IntersectionFilter<GL>& intersection_filter = ApplyOn::AllIntersections<GL>(),
+                   VoidFunction prepare_lambda = dxt_void_noop,
+                   VoidFunction finalize_lambda = dxt_void_noop)
+  {
+    return this->append(new ElementAndIntersectionLambdaFunctor<GL>(
+                            element_apply_on, intersection_apply_on, prepare_lambda, finalize_lambda),
+                        element_filter,
+                        intersection_filter);
+  }
+
+  ThisType& append(ElementFunction element_apply_on,
+                   IntersectionElementElementFunction intersection_apply_on,
+                   ViewElementFunction element_filter,
+                   ViewIntersectionFunction intersection_filter,
+                   VoidFunction prepare_lambda = dxt_void_noop,
+                   VoidFunction finalize_lambda = dxt_void_noop)
+  {
+    return this->append(new ElementAndIntersectionLambdaFunctor<GL>(
+                            element_apply_on, intersection_apply_on, prepare_lambda, finalize_lambda),
+                        ApplyOn::LambdaFilteredElements<GL>(element_filter),
+                        ApplyOn::LambdaFilteredIntersections<GL>(intersection_filter));
+  }
+
+  /**
+   * \}
+   * \name These methods are required by ElementAndIntersectionFunctor.
+   * \{
+   */
+
+  virtual void prepare() override
+  {
+    auto prep = [](auto& pt) {
+      for (auto&& list : pt) {
+        for (auto&& wrapper : list)
+          wrapper->functor().prepare();
+      }
+    };
+    prep(element_functor_wrappers_);
+    prep(intersection_functor_wrappers_);
+    prep(element_and_intersection_functor_wrappers_);
   } // ... prepare()
 
-  bool apply_on(const EntityType& entity) const
+  virtual void apply_local(const ElementType& element) override
   {
-    for (const auto& functor : codim0_functors_)
-      if (functor->apply_on(grid_layer_, entity))
-        return true;
-    return false;
-  } // ... apply_on(...)
-
-  bool apply_on(const IntersectionType& intersection) const
-  {
-    for (const auto& functor : codim1_functors_)
-      if (functor->apply_on(grid_layer_, intersection))
-        return true;
-    return false;
-  } // ... apply_on(...)
-
-  virtual void apply_local(const EntityType& entity)
-  {
-    for (auto& functor : codim0_functors_)
-      if (functor->apply_on(grid_layer_, entity))
-        functor->apply_local(entity);
+    for (auto&& wrapper : *element_functor_wrappers_) {
+      if (wrapper->filter().contains(grid_view_, element))
+        wrapper->functor().apply_local(element);
+    }
+    for (auto&& wrapper : *element_and_intersection_functor_wrappers_) {
+      if (wrapper->element_filter().contains(grid_view_, element))
+        wrapper->functor().apply_local(element);
+    }
   } // ... apply_local(...)
 
-  virtual void
-  apply_local(const IntersectionType& intersection, const EntityType& inside_entity, const EntityType& outside_entity)
+  virtual void apply_local(const IntersectionType& intersection,
+                           const ElementType& inside_element,
+                           const ElementType& outside_element) override
   {
-    for (auto& functor : codim1_functors_)
-      if (functor->apply_on(grid_layer_, intersection))
-        functor->apply_local(intersection, inside_entity, outside_entity);
+    for (auto&& wrapper : *intersection_functor_wrappers_) {
+      if (wrapper->filter().contains(grid_view_, intersection))
+        wrapper->functor().apply_local(intersection, inside_element, outside_element);
+    }
+    for (auto&& wrapper : *element_and_intersection_functor_wrappers_) {
+      if (wrapper->intersection_filter().contains(grid_view_, intersection))
+        wrapper->functor().apply_local(intersection, inside_element, outside_element);
+    }
   } // ... apply_local(...)
 
-  virtual void finalize()
+  virtual void finalize() override
   {
-    for (auto& functor : codim0_functors_)
-      functor->finalize();
-    for (auto& functor : codim1_functors_)
-      functor->finalize();
+    auto fin = [](auto& pt) {
+      for (auto&& list : pt) {
+        for (auto&& wrapper : list)
+          wrapper->functor().finalize();
+      }
+    };
+    fin(element_and_intersection_functor_wrappers_);
+    fin(element_functor_wrappers_);
+    fin(intersection_functor_wrappers_);
   } // ... finalize()
 
-  void walk(const bool use_tbb = false)
+  /**
+   * \}
+   */
+
+  void walk(const bool use_tbb = false, const bool clear_functors = true)
   {
 #if HAVE_TBB
     if (use_tbb) {
       const auto num_partitions =
           DXTC_CONFIG_GET("threading.partition_factor", 1u) * XT::Common::threadManager().current_threads();
-      RangedPartitioning<GridLayerType, 0> partitioning(grid_layer_, num_partitions);
-      this->walk(partitioning);
+      RangedPartitioning<GridViewType, 0> partitioning(grid_view_, num_partitions);
+      this->walk(partitioning, clear_functors);
       return;
     }
 #else
@@ -233,14 +419,36 @@ public:
     prepare();
 
     // only do something, if we have to
-    if ((codim0_functors_.size() + codim1_functors_.size()) > 0) {
-      walk_range(elements(grid_layer_));
-    } // only do something, if we have to
+    if ((element_functor_wrappers_->size() + intersection_functor_wrappers_->size()
+         + element_and_intersection_functor_wrappers_->size())
+        > 0) {
+      walk_range(elements(grid_view_));
+    }
 
     // finalize functors
     finalize();
-    clear();
+
+    if (clear_functors)
+      clear();
   } // ... walk(...)
+
+  void clear()
+  {
+    auto clr = [](auto& pt) {
+      for (auto&& list : pt) {
+        list.clear();
+      }
+    };
+    clr(element_functor_wrappers_);
+    clr(intersection_functor_wrappers_);
+    clr(element_and_intersection_functor_wrappers_);
+  }
+
+  BaseType* copy() override
+  {
+    return new ThisType(*this);
+  }
+
 
 #if HAVE_TBB
 protected:
@@ -278,13 +486,15 @@ protected:
 
 public:
   template <class PartioningType>
-  void walk(PartioningType& partitioning)
+  void walk(PartioningType& partitioning, const bool clear_functors = true)
   {
     // prepare functors
     prepare();
 
     // only do something, if we have to
-    if ((codim0_functors_.size() + codim1_functors_.size()) > 0) {
+    if ((element_functor_wrappers_->size() + intersection_functor_wrappers_->size()
+         + element_and_intersection_functor_wrappers_->size())
+        > 0) {
       tbb::blocked_range<std::size_t> range(0, partitioning.partitions());
       Body<PartioningType, ThisType> body(*this, partitioning);
       tbb::parallel_reduce(range, body);
@@ -292,7 +502,9 @@ public:
 
     // finalize functors
     finalize();
-    clear();
+
+    if (clear_functors)
+      clear();
   } // ... tbb_walk(...)
 #else
 public:
@@ -303,7 +515,9 @@ public:
     prepare();
 
     // only do something, if we have to
-    if ((codim0_functors_.size() + codim1_functors_.size()) > 0) {
+    if ((element_functor_wrappers_->size() + intersection_functor_wrappers_->size()
+         + element_and_intersection_functor_wrappers_->size())
+        > 0) {
       // no actual SMP walk, use range as is
       walk_range(partitioning.everything());
     }
@@ -314,46 +528,53 @@ public:
   } // ... tbb_walk(...)
 #endif // HAVE_TBB
 
-protected:
-  template <class EntityRange>
-  void walk_range(const EntityRange& entity_range)
+private:
+  template <class ElementRange>
+  void walk_range(const ElementRange& element_range)
   {
 #ifdef __INTEL_COMPILER
-    const auto it_end = entity_range.end();
-    for (auto it = entity_range.begin(); it != it_end; ++it) {
-      const EntityType& entity = *it;
+    const auto it_end = element_range.end();
+    for (auto it = element_range.begin(); it != it_end; ++it) {
+      const ElementType& element = *it;
 #else
-    for (const EntityType& entity : entity_range) {
+    for (const ElementType& element : element_range) {
 #endif
-      // apply codim0 functors
-      apply_local(entity);
+      // apply element functors
+      apply_local(element);
 
       // only walk the intersections, if there are codim1 functors present
-      if (codim1_functors_.size() > 0) {
-        // walk the intersections, do not use intersections(...) here, since that does not work for a SubdomainGridView
-        // which is based on alugrid and then wrapped as a grid view (see also
-        // https://github.com/dune-community/dune-xt-grid/issues/26)
-        const auto intersection_it_end = grid_layer_.iend(entity);
-        for (auto intersection_it = grid_layer_.ibegin(entity); intersection_it != intersection_it_end;
+      if ((intersection_functor_wrappers_->size() + element_and_intersection_functor_wrappers_->size()) > 0) {
+        // Do not use intersections(...) here, since that does not work for a SubdomainGridPart which is based on
+        // alugrid and then wrapped as a grid view (see also https://github.com/dune-community/dune-xt-grid/issues/26)
+        const auto intersection_it_end = grid_view_.iend(element);
+        for (auto intersection_it = grid_view_.ibegin(element); intersection_it != intersection_it_end;
              ++intersection_it) {
           const auto& intersection = *intersection_it;
-
-          // apply codim1 functors
           if (intersection.neighbor()) {
             const auto neighbor = intersection.outside();
-            apply_local(intersection, entity, neighbor);
+            apply_local(intersection, element, neighbor);
           } else
-            apply_local(intersection, entity, entity);
-
+            apply_local(intersection, element, element);
         } // walk the intersections
       } // only walk the intersections, if there are codim1 functors present
-    }
+    } // .. walk elements
   } // ... walk_range(...)
 
-  GridLayerType grid_layer_;
-  std::vector<std::unique_ptr<internal::Codim0Object<GridLayerType>>> codim0_functors_;
-  std::vector<std::unique_ptr<internal::Codim1Object<GridLayerType>>> codim1_functors_;
+  GridViewType grid_view_;
+  Common::PerThreadValue<std::list<std::shared_ptr<internal::ElementFunctorWrapper<GridViewType>>>>
+      element_functor_wrappers_;
+  Common::PerThreadValue<std::list<std::shared_ptr<internal::IntersectionFunctorWrapper<GridViewType>>>>
+      intersection_functor_wrappers_;
+  Common::PerThreadValue<std::list<std::shared_ptr<internal::ElementAndIntersectionFunctorWrapper<GridViewType>>>>
+      element_and_intersection_functor_wrappers_;
 }; // class Walker
+
+
+template <class GL>
+Walker<GL> make_walker(GL grid_view)
+{
+  return Walker<GL>(grid_view);
+}
 
 
 } // namespace Grid
