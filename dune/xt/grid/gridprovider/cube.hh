@@ -33,6 +33,7 @@
 #include <dune/xt/grid/information.hh>
 #include <dune/xt/grid/structuredgridfactory.hh>
 #include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/grid/parallel/partitioning/repartition.hh>
 
 #include "provider.hh"
 
@@ -280,7 +281,6 @@ make_cube_grid(const Common::Configuration& cfg = cube_gridprovider_default_conf
   return CubeGridProviderFactory<GridType>::create(cfg, mpi_comm);
 }
 
-
 template <class GridType>
 class CubeDdSubdomainsGridProviderFactory
 {
@@ -288,6 +288,7 @@ class CubeDdSubdomainsGridProviderFactory
 
 public:
   typedef DD::SubdomainGrid<GridType> DdGridType;
+
 
   static const bool available = true;
 
@@ -319,6 +320,7 @@ public:
         mpi_comm);
   }
 
+
   static GridProvider<GridType, DdGridType>
   create(const FieldVector<typename GridType::ctype, GridType::dimension>& lower_left,
          const FieldVector<typename GridType::ctype, GridType::dimension>& upper_right,
@@ -330,49 +332,60 @@ public:
          const size_t inner_boundary_segment_index,
          MPIHelper::MPICommunicator mpi_comm)
   {
+    const auto total_subdomains =
+        std::accumulate(num_partitions.begin(), num_partitions.end(), 1u, std::multiplies<unsigned int>());
     auto grid = make_cube_grid<GridType>(lower_left, upper_right, num_elements, num_refinements, overlap_size, mpi_comm)
                     .grid_ptr();
+    //! the full grid needs to be avail to all ranks to determine real indices for subdomains
+    const auto repartition_grid =
+        make_cube_grid<Dune::YaspGrid<GridType::dimension,
+                                      Dune::EquidistantOffsetCoordinates<double, GridType::dimension>>>(
+            lower_left, upper_right, num_partitions, 0, overlap_size, MPIHelper::getLocalCommunicator())
+            .grid_ptr();
+    visualize_index_per_level(*repartition_grid, "repartition_grid_pre_");
+    const auto repartition_view = repartition_grid->leafGridView();
+    const auto min_partitions = grid->comm().size();
+    if (total_subdomains < min_partitions) {
+      DUNE_THROW(InvalidStateException, "DDgrid must have at least " << min_partitions << "partitions");
+    }
     grid->loadBalance();
-    const auto dims = XT::Grid::dimensions(grid->leafGridView());
-    const auto bounding_box = dims.bounding_box();
 
     typedef DD::SubdomainGridFactory<GridType> DdGridFactoryType;
     const size_t neighbor_recursion_level = DD::internal::NeighborRecursionLevel<GridType>::compute();
     // prepare
     DdGridFactoryType factory(*grid, inner_boundary_segment_index);
     factory.prepare();
-    // global grid part
-    const auto global_grid_part = factory.globalGridView();
-    // walk the grid
+
+    using Element = extract_entity_t<GridType>;
+    auto get_subdomain =
+        [&repartition_grid, &repartition_view, &num_partitions](const extract_entity_t<GridType>& entity) -> size_t {
+      const auto entity_center = entity.geometry().center();
+      for (auto&& subdomain : elements(repartition_view)) {
+        auto&& repartition_geo = subdomain.geometry();
+        const auto& repartition_ref_element = reference_element(repartition_geo);
+        const auto center = repartition_geo.local(entity_center);
+        const bool contained = repartition_ref_element.checkInside(center);
+        if (contained) {
+          return repartition_grid->leafIndexSet().index(subdomain);
+        }
+      }
+      DUNE_THROW(InvalidStateException, "no subdomain found for entity center " << entity.geometry().center());
+    };
+    // make sure subdomains are not distributed across different ranks
+    do_repartition(*grid, get_subdomain);
+
+    auto global_grid_part = factory.globalGridView();
     const auto entity_it_end = global_grid_part->template end<0, All_Partition>();
     for (auto entity_it = global_grid_part->template begin<0, All_Partition>(); entity_it != entity_it_end;
          ++entity_it) {
       // get center of entity
       const auto& entity = *entity_it;
-      const auto center = entity.geometry().center();
-      // decide on the subdomain this entity shall belong to
-      std::vector<size_t> whichPartition(GridType::dimension, 0);
-      for (size_t dd = 0; dd < GridType::dimension; ++dd)
-        whichPartition[dd] =
-            (std::min((unsigned int)(std::floor(num_partitions[dd] * ((center[dd] - bounding_box[0][dd])
-                                                                      / (bounding_box[1][dd] - bounding_box[0][dd])))),
-                      num_partitions[dd] - 1));
-      size_t subdomain = 0;
-      if (GridType::dimension == 1)
-        subdomain = whichPartition[0];
-      else if (GridType::dimension == 2)
-        subdomain = whichPartition[0] + whichPartition[1] * num_partitions[0];
-      else if (GridType::dimension == 3)
-        subdomain = whichPartition[0] + whichPartition[1] * num_partitions[0]
-                    + whichPartition[2] * num_partitions[1] * num_partitions[0];
-      else
-        DUNE_THROW(Dune::NotImplemented,
-                   "ERROR in " << static_id() << ": not implemented for grid dimensions other than 1, 2 or 3!");
-      // add entity to subdomain
+      const auto subdomain = get_subdomain(entity);
       factory.add(entity, subdomain /*, prefix + "  ", out*/);
-    } // walk the grid
+    }
     // finalize
-    factory.finalize(num_oversampling_layers, neighbor_recursion_level /*, prefix + "  ", out*/);
+    const bool assert_connected = grid->comm().size() == 1;
+    factory.finalize(num_oversampling_layers, neighbor_recursion_level, assert_connected);
     // be done with it
     return GridProvider<GridType, DdGridType>(grid, factory.createMsGrid());
   } // ... create(...)
