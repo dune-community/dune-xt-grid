@@ -14,6 +14,7 @@ using AvailableTypes = boost::tuple<Dune::YaspGrid<1, Dune::EquidistantOffsetCoo
                                     Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>
 #if HAVE_DUNE_ALUGRID
                                     ,
+                                    Dune::ALUGrid<2, 2, Dune::simplex, Dune::nonconforming>,
                                     Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>
 #endif
 #if HAVE_DUNE_UGGRID || HAVE_UG
