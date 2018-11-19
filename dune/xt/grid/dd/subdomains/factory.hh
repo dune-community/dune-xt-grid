@@ -403,7 +403,8 @@ public:
     } // loop over all subdomains
     // walk the global grid part
     //   * to generate the information which sudomains neighbor each other
-    for (auto entityIt = globalGridView_->template begin<0>(); entityIt != globalGridView_->template end<0>();
+    for (auto entityIt = globalGridView_->template begin<0, Interior_Partition>();
+         entityIt != globalGridView_->template end<0, Interior_Partition>();
          ++entityIt) {
       // find the subdomains this entity lives in
       const EntityType& entity = *entityIt;
