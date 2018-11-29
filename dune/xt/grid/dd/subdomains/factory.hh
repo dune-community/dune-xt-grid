@@ -403,8 +403,7 @@ public:
     } // loop over all subdomains
     // walk the global grid part
     //   * to generate the information which sudomains neighbor each other
-    for (auto entityIt = globalGridView_->template begin<0, Interior_Partition>();
-         entityIt != globalGridView_->template end<0, Interior_Partition>();
+    for (auto entityIt = globalGridView_->template begin<0>(); entityIt != globalGridView_->template end<0>();
          ++entityIt) {
       // find the subdomains this entity lives in
       const EntityType& entity = *entityIt;
@@ -500,6 +499,7 @@ public:
             IntersectionInfoSetType& entityCouplingBoundaryInfo = couplingBoundaryInfoMap[entityGlobalIndex];
             //   * and add this local intersection
             entityCouplingBoundaryInfo.push_back(intersectionLocalIndex);
+
           } else { // if neighbor is contained in this subdomain
             subdomainsEntitiesAreConnected = true;
           } // check if neighbor is in another subdomain
@@ -619,7 +619,7 @@ public:
     finalized_ = true;
   } // ... finalize(...)
 
-  std::shared_ptr<DdGridType> createMsGrid()
+  std::shared_ptr<DdGridType> createMsGrid(std::set<size_t> subdomains_on_rank)
   {
     assert(finalized_ && "Please call finalize() before calling createMsGrid()!");
     if (oversampled_)
@@ -631,7 +631,8 @@ public:
                                           localGridParts_,
                                           boundaryGridParts_,
                                           couplingGridPartsMaps_,
-                                          oversampledLocalGridParts_);
+                                          oversampledLocalGridParts_,
+                                          subdomains_on_rank);
     else
       return std::make_shared<DdGridType>(grid_,
                                           globalGridView_,
@@ -640,7 +641,17 @@ public:
                                           entityToSubdomainMap_,
                                           localGridParts_,
                                           boundaryGridParts_,
-                                          couplingGridPartsMaps_);
+                                          couplingGridPartsMaps_,
+                                          subdomains_on_rank);
+  }
+  std::shared_ptr<DdGridType> createMsGrid()
+  {
+    std::set<size_t> subdomains_on_rank;
+    for (auto&& ii : XT::Common::value_range(size_)) {
+      subdomains_on_rank.insert(ii);
+    }
+    DUNE_THROW(InvalidStateException, "subdomain default");
+    createMsGrid(subdomains_on_rank);
   } // ... createMsGrid(...)
 
 private:

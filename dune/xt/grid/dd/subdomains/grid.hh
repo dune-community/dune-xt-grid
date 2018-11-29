@@ -80,7 +80,8 @@ public:
       const std::
           shared_ptr<const std::vector<std::map<size_t,
                                                 std::shared_ptr<const typename CouplingGridViewType::Implementation>>>>
-              couplingGridViewsMaps)
+              couplingGridViewsMaps,
+      std::set<size_t> subdomains_on_rank)
     : grid_(grd)
     , globalGridView_(globalGrdPrt)
     , size_(sz)
@@ -91,6 +92,8 @@ public:
     , couplingGridViewsMaps_(couplingGridViewsMaps)
     , oversampling_(false)
     , oversampledLocalGridViews_(nullptr)
+
+    , subdomains_on_rank_(subdomains_on_rank.begin(), subdomains_on_rank.end())
   {
     // check for correct sizes
     std::stringstream msg;
@@ -125,7 +128,8 @@ public:
                                                 std::shared_ptr<const typename CouplingGridViewType::Implementation>>>>
               couplingGridViewsMaps,
       const std::shared_ptr<const std::vector<std::shared_ptr<const typename LocalGridViewType::Implementation>>>
-          oversampledLocalGridViews)
+          oversampledLocalGridViews,
+      std::set<size_t> subdomains_on_rank)
     : grid_(grd)
     , globalGridView_(globalGrdPrt)
     , size_(sz)
@@ -136,6 +140,7 @@ public:
     , couplingGridViewsMaps_(couplingGridViewsMaps)
     , oversampling_(true)
     , oversampledLocalGridViews_(oversampledLocalGridViews)
+    , subdomains_on_rank_(subdomains_on_rank.begin(), subdomains_on_rank.end())
   {
     // check for correct sizes
     std::stringstream msg;
@@ -238,6 +243,11 @@ public:
     return entityToSubdomainMap_;
   }
 
+  std::list<size_t> subdomains_on_rank() const
+  {
+    return subdomains_on_rank_;
+  }
+
   const NeighborSetType& neighborsOf(const size_t subdomain) const
   {
     assert(subdomain < size_);
@@ -275,6 +285,7 @@ public:
   bool oversampling_;
   const std::shared_ptr<const std::vector<std::shared_ptr<const typename LocalGridViewType::Implementation>>>
       oversampledLocalGridViews_;
+  const std::list<size_t> subdomains_on_rank_;
 }; // class SubdomainGrid
 
 

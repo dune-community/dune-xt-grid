@@ -357,6 +357,7 @@ public:
     factory.prepare();
 
     using Element = extract_entity_t<GridType>;
+    std::set<size_t> subdomains_on_rank{};
     auto get_subdomain =
         [&repartition_grid, &repartition_view, &num_partitions](const extract_entity_t<GridType>& entity) -> size_t {
       const auto entity_center = entity.geometry().center();
@@ -381,13 +382,16 @@ public:
       // get center of entity
       const auto& entity = *entity_it;
       const auto subdomain = get_subdomain(entity);
+      if (entity.partitionType() == InteriorEntity) {
+        subdomains_on_rank.insert(subdomain);
+      }
       factory.add(entity, subdomain /*, prefix + "  ", out*/);
     }
     // finalize
     const bool assert_connected = grid->comm().size() == 1;
     factory.finalize(num_oversampling_layers, neighbor_recursion_level, assert_connected);
     // be done with it
-    return GridProvider<GridType, DdGridType>(grid, factory.createMsGrid());
+    return GridProvider<GridType, DdGridType>(grid, factory.createMsGrid(subdomains_on_rank));
   } // ... create(...)
 }; // class CubeDdSubdomainsGridProviderFactory
 

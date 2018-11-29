@@ -101,6 +101,7 @@ void bind_DdSubdomainsGridProvider(pybind11::module& m, const std::string& grid_
   c.def_property_readonly("num_subdomains", [](const C& self) { return self.dd_grid().size(); });
   c.def_property_readonly("grid_type", [grid_id](const C& /*self*/) { return grid_id; });
   c.def_property_readonly("dim", [](const C& /*self*/) { return C::dimDomain; });
+  c.def_property_readonly("subdomains_on_rank", [](const C& self) { return self.dd_grid().subdomains_on_rank(); });
   c.def("subdomain_on_boundary",
         [](const C& self, const ssize_t subdomain) {
           return self.dd_grid().boundary(XT::Common::numeric_cast<size_t>(subdomain));
