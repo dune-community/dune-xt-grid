@@ -17,7 +17,7 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 df85c799dbd9cd6d331a27a9ead834da59ec0549 dune-xt-common (heads/rene/parabolic-lrbms-2017)
 	 e69fd76a2344e7ed99858ff9cb0988437c439b5a dune-xt-data (heads/rene/parabolic-lrbms-2017)
 	 841cdccca42c349ff92991639a2466837617d29c dune-xt-functions (heads/rene/parabolic-lrbms-2017)
-	 fde955b17de07ee7f2156545c42b5e28c45955c6 dune-xt-grid (heads/rene/parabolic-lrbms-2017)
+	+a04d164e4e91589d273d0ede676d922a25e4a0f0 dune-xt-grid (heads/rene/parabolic-lrbms-2017)
 	 1cc646328ea60712c9f09b3d797878cce873f7e1 dune-xt-la (heads/rene/parabolic-lrbms-2017)
 	+08d45fb5ccbe243a44295ae48e6b157db4fa6877 pylrbms (heads/master)
 	+62d533548de0361a19f0e75367b63ee76a0934f4 pymor (0.1.0-3252-g62d53354)
@@ -113,7 +113,7 @@ commit = 841cdccca42c349ff92991639a2466837617d29c
 [submodule.dune-xt-grid]
 remote = https://github.com/dune-community/dune-xt-grid.git
 status = 2424627f0ad5de7e4aaa5e7f48bc2a02414d95a1 .vcsetup (heads/master)
-commit = fde955b17de07ee7f2156545c42b5e28c45955c6
+commit = a04d164e4e91589d273d0ede676d922a25e4a0f0
 
 [submodule.dune-xt-la]
 remote = https://github.com/dune-community/dune-xt-la.git

@@ -62,7 +62,6 @@ public:
     for (auto entity_it = view.template begin<0, All_Partition>(); entity_it != entity_it_end; ++entity_it) {
       // add entity to subdomain
       const ALUMacroKey key = global_id_set_.id(*entity_it).getKey();
-      DXTC_LOG_DEBUG << "Processing Key" << key << "\n";
       id_map_[key] = key_functor(*entity_it);
     } // walk the grid
   }
@@ -71,8 +70,6 @@ public:
   int operator()(const Element& element) const
   {
     const auto key = global_id_set_.id(element).getKey();
-    const auto it = id_map_.find(key);
-    DUNE_THROW_IF(it == id_map_.end(), InvalidStateException, "Global ID not in idset " << key);
     const size_t subdomain = id_map_.at(key);
     return subdomain % max_rank_;
   }
