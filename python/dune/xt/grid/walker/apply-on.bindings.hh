@@ -45,6 +45,11 @@ public:
 private:
   typedef XT::Grid::BoundaryInfo<extract_intersection_t<GL>> BoundaryInfoType;
 
+  static std::string makename(std::string class_name, std::string layer_name) {
+    return std::string("make_apply_on_") + class_name + "_"
+                                       + layer_name +  "_" + XT::Grid::bindings::grid_name<G>::value();
+  }
+
   template <bool with_bi = ctor_expects_boundary_info, bool anything = true>
   struct addbind // with_bi = false
   {
@@ -52,9 +57,8 @@ private:
     {
       c.def(pybind11::init<>());
 
-      m.def(std::string("make_apply_on_" + class_name + "_" + XT::Grid::bindings::grid_name<G>::value() + "_"
-                        + layer_name)
-                .c_str(),
+
+      m.def(makename(class_name, layer_name).c_str(),
             []() { return type(); });
     }
   };
@@ -68,7 +72,7 @@ private:
 
       c.def(pybind11::init<const BoundaryInfoType&>());
 
-      m.def(std::string("make_apply_on_" + class_name + "_" + layer_name).c_str(),
+      m.def(makename(class_name, layer_name).c_str(),
             [](const BoundaryInfoType& boundary_info) { return type(boundary_info); },
             "boundary_info"_a);
     }
@@ -82,7 +86,7 @@ public:
     const auto grid_name = XT::Grid::bindings::grid_name<G>::value();
     const auto InterfaceName = Common::to_camel_case("ApplyOnWhichIntersection_" + grid_name + "_" + layer_name);
 
-    // bind interface, guard since we might not be the first to do so for this intersection
+//     bind interface, guard since we might not be the first to do so for this intersection
     try {
       py::class_<InterfaceType>(m, InterfaceName.c_str(), InterfaceName.c_str());
     } catch (std::runtime_error&) {
@@ -128,8 +132,8 @@ public:
 
 #if HAVE_DUNE_ALUGRID
 #define _DUNE_XT_GRID_WALKER_APPLYON_BIND_ALU(_m, _W, _w, _layer, _backend, _class_name)                               \
-  _DUNE_XT_GRID_WALKER_APPLYON_BIND(_m, _W, _w, ALU_2D_SIMPLEX_NONCONFORMING, _layer, _backend, _class_name)
-//_DUNE_XT_GRID_WALKER_APPLYON_BIND(_m, _W, _w, ALU_2D_SIMPLEX_CONFORMING, _layer, _backend, _class_name);
+  _DUNE_XT_GRID_WALKER_APPLYON_BIND(_m, _W, _w, ALU_2D_SIMPLEX_NONCONFORMING, _layer, _backend, _class_name); \
+_DUNE_XT_GRID_WALKER_APPLYON_BIND(_m, _W, _w, ALU_2D_SIMPLEX_CONFORMING, _layer, _backend, _class_name)
 #else
 #define _DUNE_XT_GRID_WALKER_APPLYON_BIND_ALU(_m, _W, _w, _layer, _backend, _class_name)
 #endif
