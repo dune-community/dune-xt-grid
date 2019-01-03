@@ -13,7 +13,7 @@
 #define DUNE_XT_GRID_PROVIDER_EOC_HH
 
 #if HAVE_DUNE_ALUGRID
-#include <dune/alugrid/grid.hh>
+#  include <dune/alugrid/grid.hh>
 #endif
 
 #include <dune/xt/grid/gridprovider/provider.hh>
@@ -248,8 +248,7 @@ public:
   template <class... Args>
   EOCGridProvider(Args&&... args)
     : LevelBasedEOCGridProvider<G>(std::forward<Args>(args)...)
-  {
-  }
+  {}
 };
 
 template <class G>
@@ -259,22 +258,31 @@ public:
   template <class... Args>
   EOCGridProvider(Args&&... args)
     : DdSubdomainsBasedEOCGridProvider<G>(std::forward<Args>(args)...)
-  {
-  }
+  {}
 };
 
 #if HAVE_DUNE_ALUGRID
 
 template <class Comm>
 class EOCGridProvider<Dune::ALUGrid<2, 2, simplex, conforming, Comm>>
-    : public LeafBasedEOCGridProvider<Dune::ALUGrid<2, 2, simplex, conforming, Comm>>
+  : public LeafBasedEOCGridProvider<Dune::ALUGrid<2, 2, simplex, conforming, Comm>>
 {
 public:
   template <class... Args>
   EOCGridProvider(Args&&... args)
     : LeafBasedEOCGridProvider<Dune::ALUGrid<2, 2, simplex, conforming, Comm>>(std::forward<Args>(args)...)
-  {
-  }
+  {}
+};
+
+template <class Comm>
+class EOCGridProvider<Dune::ALUGrid<2, 2, simplex, nonconforming, Comm>>
+  : public LeafBasedEOCGridProvider<Dune::ALUGrid<2, 2, simplex, nonconforming, Comm>>
+{
+public:
+  template <class... Args>
+  EOCGridProvider(Args&&... args)
+    : LeafBasedEOCGridProvider<Dune::ALUGrid<2, 2, simplex, nonconforming, Comm>>(std::forward<Args>(args)...)
+  {}
 };
 
 #endif // HAVE_DUNE_ALUGRID

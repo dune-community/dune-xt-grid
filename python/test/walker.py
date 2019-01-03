@@ -12,7 +12,7 @@ import itertools
 import pytest
 import dune.xt.common as xtc
 import dune.xt.grid as xtg
-from dune.xt.grid import provider, types, walker
+from dune.xt.grid import provider, types, walker, boundaryinfo
 
 
 def _grid_provider_factory(grid_type, mpi, maker_str='make_cube_grid__{}'):
@@ -64,7 +64,7 @@ def test_grid_provider(combined_grid_provider):
     assert grid_provider.max_level() >= 0
     num_el = grid_provider.num_elements
     assert num_el > 1
-    grid_provider.global_refine(1)
+    grid_provider.global_refine(3)
     try:
         grid_provider.visualize()
     except xtc.DuneError as e:
@@ -99,6 +99,21 @@ def test_walker(grid_provider):
     walker.clear()
 
 
+def test_walker(grid_provider):
+    cfg = {'type': 'xt.grid.boundaryinfo.alldirichlet'}
+    # info = xtg.boundaryinfo.make_boundary_info_on_dd_subdomain_boundary_layer(grid_provider, cfg)
+    # assert info.grid_name
+
 def test_count():
     pass
 
+
+if __name__ == '__main__':
+    # from dune.xt.common.test import runmodule
+    # runmodule(__file__)
+    from dune.xt.common import logging
+    logging.create(63)
+    # provider.test_cube_grid()
+    for tt in [s for s in xtg.types.available_types if 'ug' not in s and 'albert' not in s]:
+        grid = _grid_provider_factory(tt, mpi=True)
+        print(grid)

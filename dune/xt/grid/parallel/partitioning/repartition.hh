@@ -27,16 +27,12 @@ class RepartitionHandle
   using Element = extract_entity_t<Grid>;
 
 public:
-  RepartitionHandle(Grid&, const std::function<size_t(const Element&)>&)
-  {
-  }
+  RepartitionHandle(Grid&, const std::function<size_t(const Element&)>&) {}
   bool repartition()
   {
     return false;
   }
-  void visualize(std::string) const
-  {
-  }
+  void visualize(std::string) const {}
 };
 
 

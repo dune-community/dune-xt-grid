@@ -27,19 +27,13 @@ public:
   typedef GridLayerImp GridLayerType;
   using EntityType = extract_entity_t<GridLayerType>;
 
-  virtual ~Codim0()
-  {
-  }
+  virtual ~Codim0() {}
 
-  virtual void prepare()
-  {
-  }
+  virtual void prepare() {}
 
   virtual void apply_local(const EntityType& entity) = 0;
 
-  virtual void finalize()
-  {
-  }
+  virtual void finalize() {}
 }; // class Codim0
 
 template <class GridLayerImp, class ReturnImp>
@@ -51,9 +45,7 @@ public:
   typedef ReturnImp ReturnType;
   using typename BaseType::EntityType;
 
-  virtual ~Codim0Return()
-  {
-  }
+  virtual ~Codim0Return() {}
 
   virtual ReturnType compute_locally(const EntityType& entity) = 0;
 
@@ -68,21 +60,15 @@ public:
   using EntityType = extract_entity_t<GridLayerType>;
   using IntersectionType = extract_intersection_t<GridLayerType>;
 
-  virtual ~Codim1()
-  {
-  }
+  virtual ~Codim1() {}
 
-  virtual void prepare()
-  {
-  }
+  virtual void prepare() {}
 
   virtual void apply_local(const IntersectionType& /*intersection*/,
                            const EntityType& /*inside_entity*/,
                            const EntityType& /*outside_entity*/) = 0;
 
-  virtual void finalize()
-  {
-  }
+  virtual void finalize() {}
 }; // class Codim1
 
 template <class GridLayerImp>
@@ -93,13 +79,9 @@ public:
   using EntityType = extract_entity_t<GridLayerType>;
   using IntersectionType = extract_intersection_t<GridLayerType>;
 
-  virtual ~Codim0And1()
-  {
-  }
+  virtual ~Codim0And1() {}
 
-  virtual void prepare()
-  {
-  }
+  virtual void prepare() {}
 
   virtual void apply_local(const EntityType& entity) = 0;
 
@@ -107,9 +89,7 @@ public:
                            const EntityType& /*inside_entity*/,
                            const EntityType& /*outside_entity*/) = 0;
 
-  virtual void finalize()
-  {
-  }
+  virtual void finalize() {}
 }; // class Codim0And1
 
 template <class GridLayerImp>
@@ -125,12 +105,9 @@ public:
   explicit DirichletDetector(const BoundaryInfo<IntersectionType>& boundary_info)
     : boundary_info_(boundary_info)
     , found_(0)
-  {
-  }
+  {}
 
-  virtual ~DirichletDetector()
-  {
-  }
+  virtual ~DirichletDetector() {}
 
   virtual void apply_local(const IntersectionType& intersection,
                            const EntityType& /*inside_entity*/,

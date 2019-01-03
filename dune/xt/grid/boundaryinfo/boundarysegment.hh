@@ -36,8 +36,8 @@ static inline Common::Configuration boundarysegment_boundaryinfo_default_config(
 // We do not want to add a virtual destructor (to be able to use this as constexpr),
 // so just silence the warning.
 #if (defined(BOOST_CLANG) && BOOST_CLANG) || (defined(BOOST_GCC) && BOOST_GCC)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
 #endif
 template <class IntersectionImp>
 class BoundarySegmentIndexBasedBoundaryInfo : public BoundaryInfo<IntersectionImp>
@@ -46,12 +46,12 @@ class BoundarySegmentIndexBasedBoundaryInfo : public BoundaryInfo<IntersectionIm
   typedef BoundarySegmentIndexBasedBoundaryInfo<IntersectionImp> ThisType;
 
 public:
-  using typename BaseType::IntersectionType;
-  using typename BaseType::DomainFieldType;
-  using typename BaseType::DomainType;
-  using typename BaseType::WorldType;
   using BaseType::dimDomain;
   using BaseType::dimWorld;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::WorldType;
 
   static std::string static_id()
   {
@@ -85,8 +85,7 @@ public:
                                         const std::map<std::string, std::pair<size_t, size_t>>& id_map)
     : default_(def)
     , id_map_(id_map)
-  {
-  }
+  {}
 
   virtual const BoundaryType& type(const IntersectionType& intersection) const override final
   {
@@ -117,7 +116,7 @@ private:
   static constexpr UnknownBoundary unknown_boundary_{};
 }; // class BoundarySegmentIndexBasedBoundaryInfo
 #if (defined(BOOST_CLANG) && BOOST_CLANG) || (defined(BOOST_GCC) && BOOST_GCC)
-#pragma GCC diagnostic pop
+#  pragma GCC diagnostic pop
 #endif
 
 

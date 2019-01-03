@@ -21,10 +21,10 @@ using AvailableTypes = boost::tuple<Dune::YaspGrid<1, Dune::EquidistantOffsetCoo
                                     ,
                                     Dune::UGGrid<2>
 #endif
-//#if HAVE_ALBERTA
-//                                    ,
-//                                    Dune::AlbertaGrid<2, 2>
-//#endif
+                                    //#if HAVE_ALBERTA
+                                    //                                    ,
+                                    //                                    Dune::AlbertaGrid<2, 2>
+                                    //#endif
                                     >;
 } // namespace bindings
 } // namespace Grid

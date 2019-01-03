@@ -55,9 +55,7 @@ struct GridProviderBase : public testing::Test
   template <class G>
   struct Helper<G, false>
   {
-    static void check_visualize(const G& /*grid_provider*/)
-    {
-    }
+    static void check_visualize(const G& /*grid_provider*/) {}
   };
 
   static void check_visualize(const GridProviderType& grid_provider)

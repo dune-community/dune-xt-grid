@@ -76,7 +76,7 @@ struct ExpectedResults<YaspGrid<3, EquidistantOffsetCoordinates<double, 3>>,
 }; // struct ExpectedResults<YaspGrid<3, EquidistantOffsetCoordinates<double, 3>>, YaspGrid<3,
 // EquidistantOffsetCoordinates<double, 3>>, anything>
 
-#if HAVE_DUNE_ALUGRID
+#  if HAVE_DUNE_ALUGRID
 
 template <class Comm, bool anything>
 struct ExpectedResults<ALUGrid<3, 3, cube, nonconforming, Comm>,
@@ -188,8 +188,8 @@ struct ExpectedResults<YaspGrid<3, EquidistantOffsetCoordinates<double, 3>>,
 }; // ExpectedResults<YaspGrid<3, EquidistantOffsetCoordinates<double, 3>>, ALUGrid<3, 3, cube, nonconforming, Comm>,
 // anything>
 
-#endif // HAVE_DUNE_ALUGRID
-#if HAVE_DUNE_UGGRID || HAVE_UG
+#  endif // HAVE_DUNE_ALUGRID
+#  if HAVE_DUNE_UGGRID || HAVE_UG
 
 template <bool anything>
 struct ExpectedResults<YaspGrid<3, EquidistantOffsetCoordinates<double, 3>>, UGGrid<3>, anything>
@@ -244,8 +244,8 @@ struct ExpectedResults<YaspGrid<3, EquidistantOffsetCoordinates<double, 3>>, UGG
   }
 }; // struct ExpectedResults<YaspGrid<3, EquidistantOffsetCoordinates<double, 3>>, UGGrid<3>, anything>
 
-#endif // HAVE_DUNE_UGGRID || HAVE_UG
-#if HAVE_ALBERTA
+#  endif // HAVE_DUNE_UGGRID || HAVE_UG
+#  if HAVE_ALBERTA
 
 template <bool anything>
 struct ExpectedResults<YaspGrid<3, EquidistantOffsetCoordinates<double, 3>>, AlbertaGrid<3, 3>, anything>
@@ -291,7 +291,7 @@ struct ExpectedResults<YaspGrid<3, EquidistantOffsetCoordinates<double, 3>>, Alb
   }
 }; // struct ExpectedResults<YaspGrid<3, EquidistantOffsetCoordinates<double, 3>>, AlbertaGrid<3>, anything>
 
-#endif // HAVE_ALBERTA
+#  endif // HAVE_ALBERTA
 
 } // namespace Grid
 } // namespace XT

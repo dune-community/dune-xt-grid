@@ -148,9 +148,8 @@ public:
     for (unsigned int dd = 0; dd < GridType::dimension; ++dd) {
       if (!(lower_left[dd] < upper_right[dd]))
         DUNE_THROW(Common::Exceptions::wrong_input_given,
-                   "lower_left has to be elementwise smaller than upper_right!\n\nlower_left = " << lower_left
-                                                                                                 << "\n\nupper_right = "
-                                                                                                 << upper_right);
+                   "lower_left has to be elementwise smaller than upper_right!\n\nlower_left = "
+                       << lower_left << "\n\nupper_right = " << upper_right);
     }
     std::shared_ptr<GridType> grd_ptr(nullptr);
     switch (variant) {
@@ -207,9 +206,8 @@ public:
       overlap_size_array = Common::make_array<unsigned int, d>(overlap_size);
     } else {
       DUNE_THROW(Common::Exceptions::wrong_input_given,
-                 "overlap_size has to be a single number or a vector with at least " << d << "elements, has only "
-                                                                                     << overlap_size.size()
-                                                                                     << " elements!");
+                 "overlap_size has to be a single number or a vector with at least "
+                     << d << "elements, has only " << overlap_size.size() << " elements!");
     }
     auto lower_left = cfg.get(
         "lower_left",
@@ -228,9 +226,8 @@ public:
       num_elements_array = Common::make_array<unsigned int, d>(num_elements);
     } else {
       DUNE_THROW(Common::Exceptions::wrong_input_given,
-                 "num_elements has to be a single number or a vector with at least " << d << "elements, has only "
-                                                                                     << num_elements.size()
-                                                                                     << " elements!");
+                 "num_elements has to be a single number or a vector with at least "
+                     << d << "elements, has only " << num_elements.size() << " elements!");
     }
     auto num_refinements =
         cfg.get("num_refinements", cube_gridprovider_default_config().template get<unsigned int>("num_refinements"));
@@ -338,8 +335,8 @@ public:
                     .grid_ptr();
     //! the full grid needs to be avail to all ranks to determine real indices for subdomains
     const auto repartition_grid =
-        make_cube_grid<Dune::YaspGrid<GridType::dimension,
-                                      Dune::EquidistantOffsetCoordinates<double, GridType::dimension>>>(
+        make_cube_grid<
+            Dune::YaspGrid<GridType::dimension, Dune::EquidistantOffsetCoordinates<double, GridType::dimension>>>(
             lower_left, upper_right, num_partitions, 0, overlap_size, MPIHelper::getLocalCommunicator())
             .grid_ptr();
     visualize_index_per_level(*repartition_grid, "repartition_grid_pre_");

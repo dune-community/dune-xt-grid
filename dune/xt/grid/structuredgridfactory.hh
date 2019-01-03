@@ -21,19 +21,19 @@
 #include <dune/grid/yaspgrid.hh>
 
 #if HAVE_DUNE_SPGRID
-#include <dune/grid/spgrid.hh>
+#  include <dune/grid/spgrid.hh>
 #endif
 
 #if HAVE_ALBERTA
-#include <dune/grid/albertagrid.hh>
+#  include <dune/grid/albertagrid.hh>
 #endif
 
 #if HAVE_DUNE_ALUGRID
-#include <dune/alugrid/common/structuredgridfactory.hh>
+#  include <dune/alugrid/common/structuredgridfactory.hh>
 #endif
 
 #if HAVE_DUNE_UGGRID
-#include <dune/grid/uggrid.hh>
+#  include <dune/grid/uggrid.hh>
 #endif
 
 #include <dune/xt/common/float_cmp.hh>
@@ -164,10 +164,10 @@ public:
   {
     if (Dune::MPIHelper::isFake)
       return Dune::StructuredGridFactory<GridType>::createCubeGrid(lowerLeft, upperRight, elements);
-#if HAVE_MPI
+#  if HAVE_MPI
     if (mpi_comm == MPI_COMM_WORLD)
       return Dune::StructuredGridFactory<GridType>::createCubeGrid(lowerLeft, upperRight, elements);
-#endif
+#  endif
     DUNE_THROW(InvalidStateException, "Alberta construction cannot handle non-world communicators");
   }
 
@@ -179,10 +179,10 @@ public:
   {
     if (Dune::MPIHelper::isFake)
       return Dune::StructuredGridFactory<GridType>::createSimplexGrid(lowerLeft, upperRight, elements);
-#if HAVE_MPI
+#  if HAVE_MPI
     if (mpi_comm == MPI_COMM_WORLD)
       return Dune::StructuredGridFactory<GridType>::createSimplexGrid(lowerLeft, upperRight, elements);
-#endif
+#  endif
     DUNE_THROW(InvalidStateException, "UGGRid construction cannot handle non-world communicators");
   }
 };
@@ -213,10 +213,10 @@ public:
       DXTC_LOG_INFO << "Ignoring non-default overlap for alberta cube creation";
     if (Dune::MPIHelper::isFake)
       return Dune::StructuredGridFactory<GridType>::createCubeGrid(lowerLeft, upperRight, elements);
-#if HAVE_MPI
+#  if HAVE_MPI
     if (mpi_comm == MPI_COMM_WORLD)
       return Dune::StructuredGridFactory<GridType>::createCubeGrid(lowerLeft, upperRight, elements);
-#endif
+#  endif
     DUNE_THROW(InvalidStateException, "Alberta construction cannot handle non-world communicators");
   }
 
@@ -228,10 +228,10 @@ public:
   {
     if (Dune::MPIHelper::isFake)
       return Dune::StructuredGridFactory<GridType>::createSimplexGrid(lowerLeft, upperRight, elements);
-#if HAVE_MPI
+#  if HAVE_MPI
     if (mpi_comm == MPI_COMM_WORLD)
       return Dune::StructuredGridFactory<GridType>::createSimplexGrid(lowerLeft, upperRight, elements);
-#endif
+#  endif
     DUNE_THROW(InvalidStateException, "Alberta construction cannot handle non-world communicators");
   }
 };
@@ -241,7 +241,7 @@ public:
 #if HAVE_DUNE_ALUGRID
 template <int dim_world, int dim, ALUGridRefinementType refineType, class Comm>
 class StructuredGridFactory<ALUGrid<dim, dim_world, Dune::cube, refineType, Comm>>
-    : public Dune::StructuredGridFactory<ALUGrid<dim, dim_world, Dune::cube, refineType, Comm>>
+  : public Dune::StructuredGridFactory<ALUGrid<dim, dim_world, Dune::cube, refineType, Comm>>
 {
   typedef ALUGrid<dim, dim_world, Dune::cube, refineType, Comm> GridType;
   typedef typename GridType::ctype ctype;
@@ -256,10 +256,10 @@ public:
   {
     if (Dune::MPIHelper::isFake)
       return Dune::StructuredGridFactory<GridType>::createCubeGrid(lowerLeft, upperRight, elements);
-#if HAVE_MPI
+#  if HAVE_MPI
     if (mpi_comm == MPI_COMM_WORLD)
       return Dune::StructuredGridFactory<GridType>::createCubeGrid(lowerLeft, upperRight, elements);
-#endif
+#  endif
     DUNE_THROW(InvalidStateException, "ALUgrid Cube construction cannot handle non-world communicators");
   }
 };
@@ -268,7 +268,7 @@ public:
 #if HAVE_DUNE_SPGRID
 template <class ct, int dim, template <int> class Refinement, class Comm>
 class StructuredGridFactory<Dune::SPGrid<ct, dim, Refinement, Comm>>
-    : public Dune::StructuredGridFactory<Dune::SPGrid<ct, dim, Refinement, Comm>>
+  : public Dune::StructuredGridFactory<Dune::SPGrid<ct, dim, Refinement, Comm>>
 {
   typedef Dune::SPGrid<ct, dim, Refinement, Comm> GridType;
   typedef typename GridType::ctype ctype;
@@ -290,7 +290,7 @@ public:
 
 template <int dim, class Coords>
 class StructuredGridFactory<Dune::YaspGrid<dim, Coords>>
-    : public Dune::StructuredGridFactory<Dune::YaspGrid<dim, Coords>>
+  : public Dune::StructuredGridFactory<Dune::YaspGrid<dim, Coords>>
 {
   typedef Dune::YaspGrid<dim, Coords> GridType;
   typedef typename GridType::ctype ctype;

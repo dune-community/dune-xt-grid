@@ -12,7 +12,7 @@
 #include <dune/xt/common/test/main.hxx>
 
 #if DUNE_VERSION_NEWER(DUNE_COMMON, 3, 9) && HAVE_TBB // EXADUNE
-#include <dune/grid/utility/partitioning/seedlist.hh>
+#  include <dune/grid/utility/partitioning/seedlist.hh>
 #endif
 
 #include <dune/xt/common/logstreams.hh>
@@ -40,8 +40,7 @@ struct GridWalkerTest : public ::testing::Test
   const GridProvider<GridType, none_t> grid_prv;
   GridWalkerTest()
     : grid_prv(make_cube_grid<GridType>(0.f, 1.f, level))
-  {
-  }
+  {}
 
   void check_count()
   {

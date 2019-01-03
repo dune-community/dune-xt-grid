@@ -42,8 +42,8 @@ static inline Common::Configuration normalbased_boundaryinfo_default_config()
 // We do not want to add a virtual destructor (to be able to use this as constexpr),
 // so just silence the warning.
 #if (defined(BOOST_CLANG) && BOOST_CLANG) || (defined(BOOST_GCC) && BOOST_GCC)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
 #endif
 
 /**
@@ -89,14 +89,12 @@ public:
         if (sub_cfg.getValueKeys().size() != 1)
           DUNE_THROW(Exceptions::boundary_info_error,
                      "while processing sub config "
-                         << counter
-                         << " of cfg (see below): could not parse give config."
+                         << counter << " of cfg (see below): could not parse give config."
                          << "For each normal, you have to provide a sub config with exactly "
                             "one key/value pair, where the key determines the BoundaryType "
                             "and the value determines the normal (see below for a valid default config)."
                          << "\n\n   This was the given config:\n"
-                         << cfg
-                         << "\n\n   This is a suitable default config:\n"
+                         << cfg << "\n\n   This is a suitable default config:\n"
                          << default_cfg);
         const auto boundary_type_key = sub_cfg.getValueKeys()[0];
         try {
@@ -111,10 +109,8 @@ public:
                      "one key/value pair, where the key determines the BoundaryType "
                      "and the value determines the normal (see below for a valid default config)."
                   << "\n\n   This was the given config:\n"
-                  << cfg
-                  << "\n\n   This is a suitable default config:\n"
-                  << default_cfg
-                  << "\nn   This was the original error:\n"
+                  << cfg << "\n\n   This is a suitable default config:\n"
+                  << default_cfg << "\nn   This was the original error:\n"
                   << ee.what());
         }
         try {
@@ -128,10 +124,8 @@ public:
                             "one key/value pair, where the key determines the BoundaryType "
                             "and the value determines the normal (see below for a valid default config)."
                          << "\n\n   This was the given config:\n"
-                         << cfg
-                         << "\n\n   This is a suitable default config:\n"
-                         << default_cfg
-                         << "\nn   This was the original error:\n"
+                         << cfg << "\n\n   This is a suitable default config:\n"
+                         << default_cfg << "\nn   This was the original error:\n"
                          << ee.what());
         }
         ret->register_new_normal(normal, boundary_type->copy());
@@ -149,8 +143,7 @@ public:
   NormalBasedBoundaryInfo(const DomainFieldType tol = 1e-10, BoundaryType*&& default_boundary_type = new NoBoundary())
     : tol_(tol)
     , default_boundary_type_(std::move(default_boundary_type))
-  {
-  }
+  {}
 
   /**
    * \attention Takes ownership of boundary_type, do not delete manually!
@@ -186,7 +179,7 @@ private:
   std::unordered_map<WorldType, std::shared_ptr<BoundaryType>> normal_to_type_map_;
 }; // class NormalBasedBoundaryInfo
 #if (defined(BOOST_CLANG) && BOOST_CLANG) || (defined(BOOST_GCC) && BOOST_GCC)
-#pragma GCC diagnostic pop
+#  pragma GCC diagnostic pop
 #endif
 
 

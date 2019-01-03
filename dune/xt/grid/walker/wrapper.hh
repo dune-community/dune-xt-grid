@@ -28,9 +28,7 @@ class Codim0Object : public Functor::Codim0<GridLayerType>
 public:
   typedef typename BaseType::EntityType EntityType;
 
-  virtual ~Codim0Object()
-  {
-  }
+  virtual ~Codim0Object() {}
 
   virtual bool apply_on(const GridLayerType& grid_layer, const EntityType& entity) const = 0;
 };
@@ -41,8 +39,8 @@ class Codim0ReturnObject : public Functor::Codim0Return<GridLayerImp, ReturnType
   typedef Functor::Codim0Return<GridLayerImp, ReturnType> BaseType;
 
 public:
-  using typename BaseType::GridLayerType;
   using typename BaseType::EntityType;
+  using typename BaseType::GridLayerType;
 
   virtual ~Codim0ReturnObject() = default;
 
@@ -60,12 +58,9 @@ public:
   Codim0FunctorWrapper(Codim0FunctorType& wrapped_functor, const ApplyOn::WhichEntity<GridLayerType>* where)
     : wrapped_functor_(wrapped_functor)
     , where_(where)
-  {
-  }
+  {}
 
-  virtual ~Codim0FunctorWrapper()
-  {
-  }
+  virtual ~Codim0FunctorWrapper() {}
 
   virtual void prepare() override final
   {
@@ -100,9 +95,7 @@ class Codim1Object : public Functor::Codim1<GridLayerType>
 public:
   typedef typename BaseType::IntersectionType IntersectionType;
 
-  virtual ~Codim1Object()
-  {
-  }
+  virtual ~Codim1Object() {}
 
   virtual bool apply_on(const GridLayerType& grid_layer, const IntersectionType& intersection) const = 0;
 };
@@ -119,8 +112,7 @@ public:
   Codim1FunctorWrapper(Codim1FunctorType& wrapped_functor, const ApplyOn::WhichIntersection<GridLayerType>* where)
     : wrapped_functor_(wrapped_functor)
     , where_(where)
-  {
-  }
+  {}
 
   virtual void prepare() override final
   {
@@ -150,7 +142,9 @@ private:
 }; // class Codim1FunctorWrapper
 
 template <class GridLayerType, class WalkerType>
-class WalkerWrapper : public Codim0Object<GridLayerType>, public Codim1Object<GridLayerType>
+class WalkerWrapper
+  : public Codim0Object<GridLayerType>
+  , public Codim1Object<GridLayerType>
 {
 public:
   typedef typename Codim1Object<GridLayerType>::EntityType EntityType;
@@ -160,19 +154,15 @@ public:
     : grid_walker_(grid_walker)
     , which_entities_(which_entities)
     , which_intersections_(new ApplyOn::AllIntersections<GridLayerType>())
-  {
-  }
+  {}
 
   WalkerWrapper(WalkerType& grid_walker, const ApplyOn::WhichIntersection<GridLayerType>* which_intersections)
     : grid_walker_(grid_walker)
     , which_entities_(new ApplyOn::AllEntities<GridLayerType>())
     , which_intersections_(which_intersections)
-  {
-  }
+  {}
 
-  virtual ~WalkerWrapper()
-  {
-  }
+  virtual ~WalkerWrapper() {}
 
   virtual void prepare() override final
   {
@@ -224,12 +214,9 @@ public:
   Codim0LambdaWrapper(LambdaType lambda, const ApplyOn::WhichEntity<GridLayerType>* where)
     : lambda_(lambda)
     , where_(where)
-  {
-  }
+  {}
 
-  virtual ~Codim0LambdaWrapper()
-  {
-  }
+  virtual ~Codim0LambdaWrapper() {}
 
   virtual bool apply_on(const GridLayerType& grid_layer, const EntityType& entity) const override final
   {
@@ -259,8 +246,7 @@ public:
   Codim1LambdaWrapper(LambdaType lambda, const ApplyOn::WhichIntersection<GridLayerType>* where)
     : lambda_(lambda)
     , where_(where)
-  {
-  }
+  {}
 
   virtual bool apply_on(const GridLayerType& grid_layer, const IntersectionType& intersection) const override final
   {

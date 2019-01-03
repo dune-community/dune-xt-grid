@@ -18,9 +18,9 @@
 #include <vector>
 
 #if HAVE_TBB
-#include <tbb/blocked_range.h>
-#include <tbb/parallel_reduce.h>
-#include <tbb/tbb_stddef.h>
+#  include <tbb/blocked_range.h>
+#  include <tbb/parallel_reduce.h>
+#  include <tbb/tbb_stddef.h>
 #endif
 
 #include <dune/common/deprecated.hh>
@@ -30,7 +30,7 @@
 #include <dune/grid/common/rangegenerators.hh>
 
 #if HAVE_TBB
-#include <dune/xt/grid/parallel/partitioning/ranged.hh>
+#  include <dune/xt/grid/parallel/partitioning/ranged.hh>
 #endif
 #include <dune/xt/common/parallel/threadmanager.hh>
 #include <dune/xt/common/ranges.hh>
@@ -63,8 +63,7 @@ public:
 
   explicit Walker(GridLayerType grd_lr)
     : grid_layer_(grd_lr)
-  {
-  }
+  {}
 
   /// \sa https://github.com/dune-community/dune-gdt/issues/89
   Walker(const Walker& other) = delete; // <- b.c. of the functors: type-erasue = no copy!
@@ -250,14 +249,12 @@ protected:
     Body(WalkerType& walker, const PartioningType& partitioning)
       : walker_(walker)
       , partitioning_(partitioning)
-    {
-    }
+    {}
 
     Body(Body& other, tbb::split /*split*/)
       : walker_(other.walker_)
       , partitioning_(other.partitioning_)
-    {
-    }
+    {}
 
     void operator()(const tbb::blocked_range<std::size_t>& range) const
     {
@@ -268,9 +265,7 @@ protected:
       }
     }
 
-    void join(Body& /*other*/)
-    {
-    }
+    void join(Body& /*other*/) {}
 
     WalkerType& walker_;
     const PartioningType& partitioning_;

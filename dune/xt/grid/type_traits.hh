@@ -94,143 +94,121 @@ using extract_outside_element_t = typename is_intersection<T>::OutsideElementTyp
 
 template <class T>
 struct is_grid : public std::false_type
-{
-};
+{};
 
 template <>
 struct is_grid<Dune::OneDGrid> : public std::true_type
-{
-};
+{};
 
 template <int dim, class Coordinates>
 struct is_grid<Dune::YaspGrid<dim, Coordinates>> : public std::true_type
-{
-};
+{};
 
 #if HAVE_ALBERTA
 
 template <int dim, int dimworld>
 struct is_grid<Dune::AlbertaGrid<dim, dimworld>> : public std::true_type
-{
-};
+{};
 
 #endif // HAVE_ALBERTA
 #if HAVE_DUNE_ALUGRID
 
 template <int dim, int dimworld, ALUGridElementType elType, ALUGridRefinementType refineType, class Comm>
 struct is_grid<Dune::ALUGrid<dim, dimworld, elType, refineType, Comm>> : public std::true_type
-{
-};
+{};
 
 #endif // HAVE_DUNE_ALUGRID
 #if HAVE_DUNE_UGGRID || HAVE_UG
 
 template <int dim>
 struct is_grid<Dune::UGGrid<dim>> : public std::true_type
-{
-};
+{};
 
 #endif // HAVE_DUNE_UGGRID || HAVE_UG
 
 #if HAVE_DUNE_SPGRID
 template <class ct, int dim, template <int> class Ref, class Comm>
 struct is_grid<Dune::SPGrid<ct, dim, Ref, Comm>> : public std::true_type
-{
-};
+{};
 
 #endif // HAVE_DUNE_SPGRID
 
 
 template <class T, int codim = 0>
 struct is_entity : public std::false_type
-{
-};
+{};
 
 template <int cd, int dim, class GridImp, template <int, int, class> class EntityImp>
 struct is_entity<Dune::Entity<cd, dim, GridImp, EntityImp>, cd> : public std::true_type
-{
-};
+{};
 
 
 template <class T, bool candidate = internal::has_traits_helper<std::remove_const_t<T>>::is_candidate>
 struct is_view : public std::false_type
-{
-};
+{};
 
 template <class T>
 struct is_view<T, true> : public std::is_base_of<Dune::GridView<typename T::Traits>, std::remove_const_t<T>>
-{
-};
+{};
 
 template <class T>
 struct is_dd_subdomain : public std::false_type
-{
-};
+{};
 
 template <class T>
 struct is_dd_subdomain<Dune::GridView<XT::Grid::internal::SubdomainGridViewTraits<T>>> : public std::true_type
-{
-};
+{};
 
 
 template <class T>
 struct is_dd_subdomain_boundary : public std::false_type
-{
-};
+{};
 
 template <class T>
 struct is_dd_subdomain_boundary<Dune::GridView<XT::Grid::internal::SubdomainBoundaryGridViewTraits<T>>>
-    : public std::true_type
-{
-};
+  : public std::true_type
+{};
 
 template <class T>
 struct is_dd_subdomain_coupling : public std::false_type
-{
-};
+{};
 
 template <class T>
 struct is_dd_subdomain_coupling<Dune::GridView<XT::Grid::internal::SubdomainCouplingGridViewTraits<T>>>
-    : public std::true_type
-{
-};
+  : public std::true_type
+{};
 
 
 template <class T, bool is_candidate = internal::has_traits_helper<T>::is_candidate>
 struct is_part : public std::false_type
-{
-};
+{};
 
 
 template <class T>
-struct is_layer : public std::integral_constant<bool,
-                                                is_view<T>::value || is_part<T>::value || is_dd_subdomain<T>::value
-                                                    || is_dd_subdomain_boundary<T>::value>
-{
-};
+struct is_layer
+  : public std::integral_constant<bool,
+                                  is_view<T>::value || is_part<T>::value || is_dd_subdomain<T>::value
+                                      || is_dd_subdomain_boundary<T>::value>
+{};
 
 
 template <class T>
 struct is_alugrid : public std::false_type
-{
-};
+{};
 
 template <class T>
 struct is_conforming_alugrid : public std::false_type
-{
-};
+{};
 
 #if HAVE_DUNE_ALUGRID
 
 template <int dim, int dimworld, ALUGridElementType elType, ALUGridRefinementType refineType, class Comm>
 struct is_alugrid<ALUGrid<dim, dimworld, elType, refineType, Comm>> : public std::true_type
-{
-};
+{};
 
 template <int dim, int dimworld, ALUGridElementType elType, class Comm>
 struct is_conforming_alugrid<ALUGrid<dim, dimworld, elType, Dune::conforming, Comm>> : public std::true_type
-{
-};
+{};
 
 #endif // HAVE_DUNE_ALUGRID
 
@@ -240,8 +218,7 @@ template <class T,
           bool part = is_part<T>::value,
           bool intersection = is_intersection<T>::value>
 struct extract_grid : public AlwaysFalse<T>
-{
-};
+{};
 
 template <class T>
 struct extract_grid<T, true, false, false>
@@ -269,8 +246,7 @@ template <class T,
           bool view = is_view<T>::value || is_dd_subdomain<T>::value || is_dd_subdomain_boundary<T>::value,
           bool part = is_part<T>::value>
 struct extract_collective_communication : public AlwaysFalse<T>
-{
-};
+{};
 
 template <class T>
 struct extract_collective_communication<T, true, false>
@@ -292,8 +268,7 @@ template <class T,
           bool view = is_view<T>::value || is_dd_subdomain<T>::value || is_dd_subdomain_boundary<T>::value,
           bool part = is_part<T>::value>
 struct extract_index_set : public AlwaysFalse<T>
-{
-};
+{};
 
 template <class T>
 struct extract_index_set<T, true, false>
@@ -315,8 +290,7 @@ template <class T,
           bool view = is_view<T>::value || is_dd_subdomain<T>::value || is_dd_subdomain_boundary<T>::value,
           bool part = is_part<T>::value>
 struct extract_intersection : public AlwaysFalse<T>
-{
-};
+{};
 
 template <class T>
 struct extract_intersection<T, true, false>
@@ -338,8 +312,7 @@ template <class T,
           bool view = is_view<T>::value || is_dd_subdomain<T>::value || is_dd_subdomain_boundary<T>::value,
           bool part = is_part<T>::value>
 struct extract_intersection_iterator : public AlwaysFalse<T>
-{
-};
+{};
 
 template <class T>
 struct extract_intersection_iterator<T, true, false>
@@ -363,8 +336,7 @@ template <class T,
           bool part = is_part<T>::value,
           bool grid = is_grid<T>::value>
 struct extract_entity : public AlwaysFalse<T>
-{
-};
+{};
 
 template <class T, size_t codim>
 struct extract_entity<T, codim, true, false, false>
@@ -393,8 +365,7 @@ template <class T,
           bool view = is_view<T>::value || is_dd_subdomain<T>::value || is_dd_subdomain_boundary<T>::value,
           bool part = is_part<T>::value>
 struct extract_local_geometry : public AlwaysFalse<T>
-{
-};
+{};
 
 template <class T, size_t codim>
 struct extract_local_geometry<T, codim, true, false>
@@ -417,8 +388,7 @@ template <class T,
           bool view = is_view<T>::value || is_dd_subdomain<T>::value || is_dd_subdomain_boundary<T>::value,
           bool part = is_part<T>::value>
 struct extract_geometry : public AlwaysFalse<T>
-{
-};
+{};
 
 template <class T, size_t codim>
 struct extract_geometry<T, codim, true, false>
@@ -442,8 +412,7 @@ template <class T,
           bool view = is_view<T>::value || is_dd_subdomain<T>::value || is_dd_subdomain_boundary<T>::value,
           bool part = is_part<T>::value>
 struct extract_iterator : public AlwaysFalse<T>
-{
-};
+{};
 
 template <class T, int c, PartitionIteratorType pit>
 struct extract_iterator<T, c, pit, true, false>
@@ -467,9 +436,8 @@ template <class T,
           bool view = is_view<T>::value || is_dd_subdomain<T>::value || is_dd_subdomain_boundary<T>::value,
           bool part = is_part<T>::value>
 struct DXT_DEPRECATED_MSG("Use extract_iterator instead (24.04.2018)!") extract_partition_iterator
-    : public extract_iterator<T, c, pit, view, part>
-{
-};
+  : public extract_iterator<T, c, pit, view, part>
+{};
 
 template <class T, PartitionIteratorType pit, int c = 0>
 using extract_partition_iterator_t

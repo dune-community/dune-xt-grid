@@ -48,9 +48,7 @@ public:
   typedef GridLayerImp GridLayerType;
   using EntityType = extract_entity_t<GridLayerType>;
 
-  virtual ~WhichEntity()
-  {
-  }
+  virtual ~WhichEntity() {}
 
   virtual WhichEntity<GridLayerImp>* copy() const = 0; // required for the python bindings
 
@@ -122,9 +120,7 @@ public:
   typedef GridLayerImp GridLayerType;
   using IntersectionType = extract_intersection_t<GridLayerType>;
 
-  virtual ~WhichIntersection<GridLayerImp>()
-  {
-  }
+  virtual ~WhichIntersection<GridLayerImp>() {}
 
   virtual WhichIntersection<GridLayerImp>* copy() const = 0; // required for redirect lambdas, i.e., in python bindings
 
@@ -179,8 +175,7 @@ public:
     : left_(left.copy())
     , right_(right.copy())
     , combine_lambda_(combine_lambda)
-  {
-  }
+  {}
 
   CombinedIntersectionFilters(const BaseType& left,
                               BaseType*&& right,
@@ -188,8 +183,7 @@ public:
     : left_(left.copy())
     , right_(std::move(right))
     , combine_lambda_(combine_lambda)
-  {
-  }
+  {}
 
   WhichIntersection<GridLayerType>* copy() const override final
   {
@@ -219,13 +213,11 @@ public:
 
   NegatedIntersectionFilter(const BaseType& filter)
     : filter_(filter.copy())
-  {
-  }
+  {}
 
   NegatedIntersectionFilter(BaseType*&& filter)
     : filter_(std::move(filter))
-  {
-  }
+  {}
 
   WhichIntersection<GridLayerType>* copy() const override final
   {
@@ -260,8 +252,7 @@ public:
 
   WhichIntersectionBase(const BoundaryInfo<IntersectionType>& boundary_info)
     : boundary_info_(boundary_info)
-  {
-  }
+  {}
 
   virtual WhichIntersection<GV>* copy() const override final
   {
@@ -370,7 +361,7 @@ public:
  */
 template <class GridLayerImp, class PartitionSetType = Dune::Partitions::All>
 class InnerIntersectionsPrimally
-    : public internal::WhichIntersectionBase<GridLayerImp, InnerIntersectionsPrimally<GridLayerImp, PartitionSetType>>
+  : public internal::WhichIntersectionBase<GridLayerImp, InnerIntersectionsPrimally<GridLayerImp, PartitionSetType>>
 {
   typedef internal::WhichIntersectionBase<GridLayerImp, InnerIntersectionsPrimally> BaseType;
 
@@ -412,8 +403,8 @@ public:
 
 template <class GridLayerImp, class PartitionSetType = Dune::Partitions::All>
 class NonPeriodicBoundaryIntersections
-    : public internal::WhichIntersectionBase<GridLayerImp,
-                                             NonPeriodicBoundaryIntersections<GridLayerImp, PartitionSetType>>
+  : public internal::WhichIntersectionBase<GridLayerImp,
+                                           NonPeriodicBoundaryIntersections<GridLayerImp, PartitionSetType>>
 {
   typedef internal::WhichIntersectionBase<GridLayerImp,
                                           NonPeriodicBoundaryIntersections<GridLayerImp, PartitionSetType>>
@@ -442,7 +433,7 @@ intersection.neighbor() && intersection.boundary()
  */
 template <class GridLayerImp, class PartitionSetType = Dune::Partitions::All>
 class PeriodicIntersections
-    : public internal::WhichIntersectionBase<GridLayerImp, PeriodicIntersections<GridLayerImp, PartitionSetType>>
+  : public internal::WhichIntersectionBase<GridLayerImp, PeriodicIntersections<GridLayerImp, PartitionSetType>>
 {
   typedef internal::WhichIntersectionBase<GridLayerImp, PeriodicIntersections> BaseType;
 
@@ -460,8 +451,7 @@ public:
 
 template <class GridLayerImp, class PartitionSetType = Dune::Partitions::All>
 class PeriodicIntersectionsPrimally
-    : public internal::WhichIntersectionBase<GridLayerImp,
-                                             PeriodicIntersectionsPrimally<GridLayerImp, PartitionSetType>>
+  : public internal::WhichIntersectionBase<GridLayerImp, PeriodicIntersectionsPrimally<GridLayerImp, PartitionSetType>>
 {
   typedef internal::WhichIntersectionBase<GridLayerImp, PeriodicIntersectionsPrimally> BaseType;
 
@@ -498,8 +488,7 @@ public:
 
   FilteredIntersections(FilterType filter)
     : filter_(filter)
-  {
-  }
+  {}
 
   virtual WhichIntersection<GridLayerImp>* copy() const override final
   {
@@ -532,15 +521,13 @@ public:
                                        BoundaryType*&& boundary_type)
     : boundary_info_(boundary_info)
     , boundary_type_(std::move(boundary_type))
-  {
-  }
+  {}
 
   explicit CustomBoundaryIntersections(const BoundaryInfo<IntersectionType>& boundary_info,
                                        const std::shared_ptr<BoundaryType>& boundary_type)
     : boundary_info_(boundary_info)
     , boundary_type_(boundary_type)
-  {
-  }
+  {}
 
   WhichIntersection<GridLayerType>* copy() const override final
   {
@@ -560,7 +547,7 @@ protected:
 
 template <class GridLayerImp>
 class DirichletIntersections
-    : public internal::WhichIntersectionBase<GridLayerImp, DirichletIntersections<GridLayerImp>, true>
+  : public internal::WhichIntersectionBase<GridLayerImp, DirichletIntersections<GridLayerImp>, true>
 {
   typedef internal::WhichIntersectionBase<GridLayerImp, DirichletIntersections<GridLayerImp>, true> BaseType;
 
@@ -570,8 +557,7 @@ public:
 
   explicit DirichletIntersections(const BoundaryInfo<IntersectionType>& boundary_info)
     : BaseType(boundary_info)
-  {
-  }
+  {}
 
   bool apply_on(const GridLayerType& /*grid_layer*/, const IntersectionType& intersection) const override final
   {
@@ -586,7 +572,7 @@ protected:
 
 template <class GridLayerImp>
 class DirichletAndProcessIntersections
-    : public internal::WhichIntersectionBase<GridLayerImp, DirichletAndProcessIntersections<GridLayerImp>, true>
+  : public internal::WhichIntersectionBase<GridLayerImp, DirichletAndProcessIntersections<GridLayerImp>, true>
 {
   typedef internal::WhichIntersectionBase<GridLayerImp, DirichletAndProcessIntersections<GridLayerImp>, true> BaseType;
 
@@ -596,8 +582,7 @@ public:
 
   explicit DirichletAndProcessIntersections(const BoundaryInfo<IntersectionType>& boundary_info)
     : BaseType(boundary_info)
-  {
-  }
+  {}
 
   virtual bool apply_on(const GridLayerType& /*grid_layer*/, const IntersectionType& intersection) const override final
   {
@@ -630,7 +615,7 @@ public:
 
 template <class GridLayerImp>
 class NeumannIntersections
-    : public internal::WhichIntersectionBase<GridLayerImp, NeumannIntersections<GridLayerImp>, true>
+  : public internal::WhichIntersectionBase<GridLayerImp, NeumannIntersections<GridLayerImp>, true>
 {
   typedef internal::WhichIntersectionBase<GridLayerImp, NeumannIntersections<GridLayerImp>, true> BaseType;
 
@@ -640,8 +625,7 @@ public:
 
   explicit NeumannIntersections(const BoundaryInfo<IntersectionType>& boundary_info)
     : BaseType(boundary_info)
-  {
-  }
+  {}
 
   bool apply_on(const GridLayerType& /*grid_layer*/, const IntersectionType& intersection) const override final
   {
@@ -655,7 +639,7 @@ protected:
 
 template <class GridLayerImp>
 class ReflectingIntersections
-    : public internal::WhichIntersectionBase<GridLayerImp, ReflectingIntersections<GridLayerImp>, true>
+  : public internal::WhichIntersectionBase<GridLayerImp, ReflectingIntersections<GridLayerImp>, true>
 {
   typedef internal::WhichIntersectionBase<GridLayerImp, ReflectingIntersections<GridLayerImp>, true> BaseType;
 
@@ -665,8 +649,7 @@ public:
 
   explicit ReflectingIntersections(const BoundaryInfo<IntersectionType>& boundary_info)
     : BaseType(boundary_info)
-  {
-  }
+  {}
 
   virtual bool apply_on(const GridLayerType& /*grid_layer*/, const IntersectionType& intersection) const override final
   {

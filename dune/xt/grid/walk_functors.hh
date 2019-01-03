@@ -31,8 +31,7 @@ struct MaximumEntityVolumeRefineFunctor : public Functor::Codim0<GridViewType>
   MaximumEntityVolumeRefineFunctor(GridType& grid, double volume, double factor)
     : threshold_volume_(volume * factor)
     , grid_(grid)
-  {
-  }
+  {}
 
   virtual void apply_local(const typename BaseType::EntityType& ent)
   {
@@ -80,8 +79,7 @@ struct MinMaxCoordinateFunctor : public Functor::Codim0<GridViewType>
   MinMaxCoordinateFunctor()
     : minima_(VectorType(std::numeric_limits<ctype>::max()))
     , maxima_(VectorType(std::numeric_limits<ctype>::min()))
-  {
-  }
+  {}
 
   virtual void apply_local(const typename BaseType::EntityType& ent)
   {
@@ -98,7 +96,7 @@ struct MinMaxCoordinateFunctor : public Functor::Codim0<GridViewType>
 };
 
 } // namespace Grid
-} // namespace Stud
+} // namespace XT
 } // namespace Dune
 
 #endif // DUNE_XT_WALK_FUNCTORS_HH
