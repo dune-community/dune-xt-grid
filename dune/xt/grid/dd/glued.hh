@@ -942,7 +942,7 @@ private:
         const auto& global_entity_ptr_unique_ptr = global_entity_ptr_unique_ptrs.at(0);
         assert(global_entity_ptr_unique_ptr);
         const auto& global_entity_ptr = *global_entity_ptr_unique_ptr;
-        const auto& global_entity = *global_entity_ptr;
+        const auto& global_entity = global_entity_ptr;
         const size_t global_entity_index = global_view.indexSet().index(global_entity);
         // store information
         local_to_global_inds[subd][local_entity_index] = global_entity_index;
