@@ -238,3 +238,7 @@ TEST_F(CubeProviderTest, subdomain_connections_are_exactly_covered_by_couplings)
 {
   this->subdomain_connections_are_exactly_covered_by_couplings();
 }
+TEST_F(CubeProviderTest, yasp_foobar)
+{
+  this->yasp_foobar();
+}

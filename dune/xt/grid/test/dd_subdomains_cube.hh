@@ -157,6 +157,23 @@ struct CubeProviderTest : public ::testing::Test
     EXPECT_EQ(ms_grid_provider_->dd_grid().globalGridView().indexSet().size(0), total_size);
   } // ... local_parts_are_of_correct_size(...)
 
+  void yasp_foobar()
+  {
+    setup();
+    for (size_t ss = 0; ss < ms_grid_provider_->dd_grid().size(); ++ss) {
+      auto local_grid_part = ms_grid_provider_->dd_grid().local_grid_view(ss, false);
+      for (auto&& entity : Dune::elements(local_grid_part)) {
+        EXPECT_GE(entity.subEntities(d), 0);
+      }
+      const constexpr auto interpolation_layer_type{Dune::XT::Grid::Layers::dd_subdomain};
+      const constexpr auto interpolation_layer_backend{Dune::XT::Grid::Backends::view};
+      auto layer{ms_grid_provider_->template layer<interpolation_layer_type, interpolation_layer_backend>()};
+      for (auto&& entity : Dune::elements(local_grid_part)) {
+        EXPECT_GE(entity.subEntities(d), 0);
+      }
+    }
+  }
+
   void local_views_are_of_correct_size()
   {
     setup();
