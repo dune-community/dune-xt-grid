@@ -149,14 +149,22 @@ struct Layer<GridType, Layers::dd_subdomain, Backends::view, DdGridType, false>
   {
     static_assert(std::is_same<DdGridType, DD::SubdomainGrid<GridType>>::value,
                   "Only available for DD::SubdomainGrid!");
-    return dd_grid->local_grid_view(subdomain, /*oversampling=*/false);
+    auto&& layer{dd_grid->local_grid_view(subdomain, /*oversampling=*/false)};
+    for (auto&& entity : Dune::elements(layer)) {
+      assert(entity.subEntities(GridType::dimension) > 0);
+    }
+    return layer;
   }
 
   static type create(GridType& /*grid*/, const int subdomain, std::shared_ptr<DD::SubdomainGrid<GridType>> dd_grid)
   {
     static_assert(std::is_same<DdGridType, DD::SubdomainGrid<GridType>>::value,
                   "Only available for DD::SubdomainGrid!");
-    return dd_grid->local_grid_view(subdomain, /*oversampling=*/false);
+    auto&& layer{dd_grid->local_grid_view(subdomain, /*oversampling=*/false)};
+    for (auto&& entity : Dune::elements(layer)) {
+      //      assert(entity.subEntities(GridType::dimension) > 0);
+    }
+    return layer;
   }
 }; // struct Layer<..., dd_subdomain, view>
 

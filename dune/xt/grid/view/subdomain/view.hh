@@ -15,6 +15,7 @@
 #include <map>
 #include <set>
 #include <memory>
+#include <numeric>
 
 #include <dune/common/exceptions.hh>
 
@@ -138,7 +139,11 @@ public:
     , indexContainer_(indexContainer)
     , boundaryInfoContainer_(boundaryInfoContainer)
     , indexSet_(std::make_shared<IndexSet>(*globalGridView_, indexContainer_))
-  {}
+  {
+    for (auto&& entity : Dune::elements(*globalGridView_)) {
+      assert(entity.subEntities(Grid::dimension) > 0);
+    }
+  }
 
   SubdomainGridViewCommon(const ThisType& other) = default;
   SubdomainGridViewCommon(ThisType&& source) = default;
@@ -208,6 +213,14 @@ public:
   const CollectiveCommunication& comm() const
   {
     return grid().comm();
+  }
+
+  /** \brief obtain number of entities in a given codimension */
+  int size(int codim) const
+  {
+    DUNE_THROW_IF(codim != 0, Dune::NotImplemented, "");
+    auto ll = [](int sum, auto& map) { return sum + map.second.size(); };
+    return std::accumulate(indexContainer_->begin(), indexContainer_->end(), 0u, ll);
   }
 
 protected:
@@ -282,6 +295,7 @@ public:
       return IntersectionIterator(*BaseType::globalGridView_, ent, true);
     } // if this is an entity at the boundary
   }
+
 }; // class SubdomainGridView
 
 
