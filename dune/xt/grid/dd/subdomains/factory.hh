@@ -377,7 +377,11 @@ public:
       // test if this subdomain exists
       typename SubdomainMapType::iterator subdomainToEntityMapIt = subdomainToEntityMap_.find(subdomain);
       if (subdomainToEntityMapIt == subdomainToEntityMap_.end()) {
-        DUNE_THROW(InvalidStateException, "numbering of subdomains has to be consecutive upon calling finalize()!");
+        if (assert_connected) {
+          DUNE_THROW(InvalidStateException, "numbering of subdomains has to be consecutive upon calling finalize()!");
+        }
+        DXTC_LOG_DEBUG << "missing consecutive check";
+        continue;
       } else {
         // compute number of codim 0 entities
         const GeometryMapType& subdomainGeometryMap = *(subdomainToEntityMapIt->second);
@@ -408,7 +412,7 @@ public:
       const IndexType entityGlobalIndex = globalGridView_->indexSet().index(entity);
       const size_t entitySubdomain = getSubdomainOf(entityGlobalIndex);
       // get the set of this subdomains neighbors
-      NeighboringSubdomainsSetType& neighborsOfSubdomain = neighboringSubdomainSets[entitySubdomain];
+      NeighboringSubdomainsSetType& neighborsOfSubdomain = neighboringSubdomainSets.at(entitySubdomain);
       // get the boundary info map for this subdomain
       EntityToIntersectionInfoMapType& subdomainInnerBoundaryInfo = *(subdomainInnerBoundaryInfos[entitySubdomain]);
       // walk the neighbors
