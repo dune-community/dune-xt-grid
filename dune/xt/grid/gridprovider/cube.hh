@@ -352,7 +352,7 @@ struct DDCreator
     }
     // finalize
     const bool assert_connected = grid->comm().size() == 1;
-    factory.finalize(num_oversampling_layers, neighbor_recursion_level, assert_connected);
+    factory.finalize(subdomains_on_rank, num_oversampling_layers, neighbor_recursion_level, assert_connected);
     // be done with it
     return GridProvider<GridType, DdGridType>(grid, factory.createMsGrid(subdomains_on_rank));
   }
@@ -435,7 +435,7 @@ struct DDCreator<ALUGrid<dim, dimworld, elType, Dune::nonconforming, Comm>,
     }
     // finalize
     const bool assert_connected = grid->comm().size() == 1;
-    factory.finalize(num_oversampling_layers, neighbor_recursion_level, assert_connected);
+    factory.finalize(subdomains_on_rank, num_oversampling_layers, neighbor_recursion_level, assert_connected);
     // be done with it
     return GridProvider<GridType, DdGridType>(grid, factory.createMsGrid(subdomains_on_rank));
   }
@@ -517,12 +517,75 @@ struct DDCreator<ALUGrid<dim, dimworld, elType, Dune::conforming, Comm>,
     }
     // finalize
     const bool assert_connected = grid->comm().size() == 1;
-    factory.finalize(num_oversampling_layers, neighbor_recursion_level, assert_connected);
+    factory.finalize(subdomains_on_rank, num_oversampling_layers, neighbor_recursion_level, assert_connected);
     // be done with it
     return GridProvider<GridType, DdGridType>(grid, factory.createMsGrid(subdomains_on_rank));
   } // ... create(...)
 };
 
+template <class GridType, class DdGridType>
+struct TrivialDDCreator
+{
+  static GridProvider<GridType, DdGridType>
+  dd_create(const FieldVector<typename GridType::ctype, GridType::dimension>& lower_left,
+            const FieldVector<typename GridType::ctype, GridType::dimension>& upper_right,
+            const std::array<unsigned int, GridType::dimension>& num_elements,
+            const unsigned int num_refinements,
+            const std::array<unsigned int, GridType::dimension>& overlap_size,
+            const std::array<unsigned int, GridType::dimension>& num_partitions,
+            const size_t num_oversampling_layers,
+            const size_t inner_boundary_segment_index,
+            MPIHelper::MPICommunicator mpi_comm)
+  {
+    DUNE_THROW(InvalidStateException, "");
+  }
+};
+
+template <int dim, int dimworld, ALUGridElementType elType, class Comm>
+struct TrivialDDCreator<ALUGrid<dim, dimworld, elType, Dune::nonconforming, Comm>,
+DD::SubdomainGrid<ALUGrid<dim, dimworld, elType, Dune::nonconforming, Comm>>>
+{
+using GridType = ALUGrid<dim, dimworld, elType, Dune::nonconforming, Comm>;
+using DdGridType = DD::SubdomainGrid<GridType>;
+static GridProvider<GridType, DdGridType>
+dd_create(const FieldVector<typename GridType::ctype, GridType::dimension>& lower_left,
+          const FieldVector<typename GridType::ctype, GridType::dimension>& upper_right,
+          const std::array<unsigned int, GridType::dimension>& num_elements,
+          const unsigned int num_refinements,
+          const std::array<unsigned int, GridType::dimension>& overlap_size,
+          const std::array<unsigned int, GridType::dimension>& /*num_partitions*/,
+          const size_t num_oversampling_layers,
+          const size_t inner_boundary_segment_index,
+          MPIHelper::MPICommunicator mpi_comm)
+{
+
+  typedef DD::SubdomainGridFactory<GridType> DdGridFactoryType;
+  const size_t neighbor_recursion_level = DD::internal::NeighborRecursionLevel<GridType>::compute();
+  DXTC_LOG_DEBUG << "PRE make cube grid" << std::endl;
+  // prepare
+  auto grid = make_cube_grid<GridType>(lower_left, upper_right, num_elements, num_refinements, overlap_size, mpi_comm)
+      .grid_ptr();
+  DdGridFactoryType factory(*grid, inner_boundary_segment_index);
+  factory.prepare();
+  DXTC_LOG_DEBUG << "POST prepare d" << std::endl;
+  using Element = extract_entity_t<GridType>;
+  size_t subdomain_number{grid->comm().rank()};
+
+  auto global_grid_part = factory.globalGridView();
+  const auto entity_it_end = global_grid_part->template end<0, All_Partition>();
+  for (auto entity_it = global_grid_part->template begin<0, All_Partition>(); entity_it != entity_it_end;
+       ++entity_it) {
+    factory.add(*entity_it, subdomain_number /*, prefix + "  ", out*/);
+  }
+  // finalize
+        DXTC_LOG_DEBUG << "PRE finalize" << std::endl;
+  const bool assert_connected = grid->comm().size() == 1;
+  std::set<size_t> subdomains_on_rank{subdomain_number};
+  factory.finalize(subdomains_on_rank, num_oversampling_layers, neighbor_recursion_level, assert_connected);
+  // be done with it
+  return GridProvider<GridType, DdGridType>(grid, factory.createMsGrid(subdomains_on_rank));
+}
+};
 } // namespace internal
 
 template <class GridType>
@@ -576,6 +639,17 @@ public:
          const size_t inner_boundary_segment_index,
          MPIHelper::MPICommunicator mpi_comm)
   {
+    CollectiveCommunication<MPIHelper::MPICommunicator> comm(mpi_comm);
+    if (comm.size()>1)
+      return internal::TrivialDDCreator<GridType, DdGridType>::dd_create(lower_left,
+                                                                         upper_right,
+                                                                         num_elements,
+                                                                         num_refinements,
+                                                                         overlap_size,
+                                                                         num_partitions,
+                                                                         num_oversampling_layers,
+                                                                         inner_boundary_segment_index,
+                                                                         mpi_comm);
     return internal::DDCreator<GridType, DdGridType>::dd_create(lower_left,
                                                                 upper_right,
                                                                 num_elements,

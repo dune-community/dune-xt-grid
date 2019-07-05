@@ -327,7 +327,8 @@ public:
     Add<1, dim>::subEntities(*this, entity, geometryMap, localCodimSizes);
   } // ... add(...)
 
-  void finalize(const size_t oversamplingLayers = 0,
+  void finalize(std::set<size_t> subdomains_on_rank,
+                const size_t oversamplingLayers = 0,
                 const size_t neighbor_recursion_level = internal::NeighborRecursionLevel<GridType>::compute(),
                 bool assert_connected = true)
   {
@@ -373,7 +374,7 @@ public:
     //   * to compute the number of codim 0 entities per subdomain
     //   * to initialize data structures
     std::vector<size_t> subdomainSizes(size_, 0);
-    for (size_t subdomain = 0; subdomain < size_; ++subdomain) {
+    for (auto&& subdomain : subdomains_on_rank) {
       // test if this subdomain exists
       typename SubdomainMapType::iterator subdomainToEntityMapIt = subdomainToEntityMap_.find(subdomain);
       if (subdomainToEntityMapIt == subdomainToEntityMap_.end()) {
