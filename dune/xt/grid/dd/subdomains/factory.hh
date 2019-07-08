@@ -344,10 +344,10 @@ public:
     //   * to map the global entity index to one of those maps
     typedef std::map<IndexType, IntersectionToBoundaryIdMapType> EntityToIntersectionInfoMapType;
     //   * to hold one of those maps for each subdomain
-    std::vector<std::shared_ptr<EntityToIntersectionInfoMapType>> subdomainInnerBoundaryInfos(size_);
+    std::map<size_t, std::shared_ptr<EntityToIntersectionInfoMapType>> subdomainInnerBoundaryInfos{};
     // for the coupling grid parts
     //   * vector to hold a (neighboring subdomain -> entity) map for each subdomain
-    typename std::vector<SubdomainMapType> couplingMaps(size_, SubdomainMapType());
+    typename std::map<size_t, SubdomainMapType> couplingMaps{};
     //   * vector to hold a map of coupling sizes
     std::vector<std::map<size_t, CodimSizesType>> couplingCodimSizeMaps(size_, std::map<size_t, CodimSizesType>());
     //   * set of local coupling intersections
@@ -366,14 +366,13 @@ public:
     //   * a map to hold the intersection informations
     std::map<size_t, std::shared_ptr<EntityToIntersectionSetMapType>> boundaryInfoMap;
     // for the neighboring information
-    neighboringSubdomainSets_ = std::shared_ptr<std::vector<NeighboringSubdomainsSetType>>(
-        new std::vector<NeighboringSubdomainsSetType>(size_, NeighboringSubdomainsSetType()));
-    std::vector<NeighboringSubdomainsSetType>& neighboringSubdomainSets = *neighboringSubdomainSets_;
+    neighboringSubdomainSets_ = std::make_shared<std::map<size_t, NeighboringSubdomainsSetType>>();
+    auto& neighboringSubdomainSets = *neighboringSubdomainSets_;
     // loop over all subdomains
     //   * to test for consecutive numbering
     //   * to compute the number of codim 0 entities per subdomain
     //   * to initialize data structures
-    std::vector<size_t> subdomainSizes(size_, 0);
+    std::map<size_t, size_t> subdomainSizes{};
     for (auto&& subdomain : subdomains_on_rank) {
       // test if this subdomain exists
       typename SubdomainMapType::iterator subdomainToEntityMapIt = subdomainToEntityMap_.find(subdomain);
@@ -518,7 +517,7 @@ public:
     // walk the subdomains
     //   * to create the local grid parts
     localGridParts_ =
-        std::make_shared<std::vector<std::shared_ptr<const typename LocalGridViewType::Implementation>>>(size_);
+        std::make_shared<std::map<size_t, std::shared_ptr<const typename LocalGridViewType::Implementation>>>();
     auto& localGridParts = *localGridParts_;
     for (typename SubdomainMapType::const_iterator subdomainIterator = subdomainToEntityMap_.begin();
          subdomainIterator != subdomainToEntityMap_.end();
@@ -566,7 +565,7 @@ public:
     // walk the subdomains
     //   * to create the coupling grid parts
     couplingGridPartsMaps_ = std::make_shared<
-        std::vector<std::map<size_t, std::shared_ptr<const typename CouplingGridViewType::Implementation>>>>(size_);
+        std::map<size_t, std::map<size_t, std::shared_ptr<const typename CouplingGridViewType::Implementation>>>>();
     auto& couplingGridPartsMaps = *couplingGridPartsMaps_;
     for (size_t subdomain = 0; subdomain < couplingMaps.size(); ++subdomain) {
       // get the coupling map for this subdomain
@@ -596,6 +595,7 @@ public:
       } // loop over all neighbors
     } // walk the subdomains
 
+    DXTC_LOG_DEBUG << "PRE oversample" << std::endl;
     // create the first layer of oversampling
     if (oversamplingLayers > 0) {
       oversampledLocalGridParts_ = addOneLayerOfOverSampling(
@@ -606,7 +606,7 @@ public:
     for (size_t ii = 1; ii < oversamplingLayers; ++ii) {
       auto tmpOversapledGridParts = oversampledLocalGridParts_;
       oversampledLocalGridParts_ =
-          std::make_shared<std::vector<std::shared_ptr<const typename LocalGridViewType::Implementation>>>(size_);
+          std::make_shared<std::map<size_t, std::shared_ptr<const typename LocalGridViewType::Implementation>>>();
       SubdomainMapType tmpSubdomainToOversamplingEntitiesMap = subdomainToOversamplingEntitiesMap_;
       subdomainToOversamplingEntitiesMap_ = SubdomainMapType();
       oversampledLocalGridParts_ = addOneLayerOfOverSampling(tmpSubdomainToOversamplingEntitiesMap,
@@ -614,7 +614,7 @@ public:
                                                              neighbor_recursion_level,
                                                              subdomainToOversamplingEntitiesMap_);
     }
-
+    DXTC_LOG_DEBUG << "PRE ret finazlie" << std::endl;
     // done
     finalized_ = true;
   } // ... finalize(...)
@@ -680,10 +680,10 @@ private:
     return result->second;
   } // ... getSubdomainOf(...)
 
-  std::shared_ptr<std::vector<std::shared_ptr<const typename LocalGridViewType::Implementation>>>
+  std::shared_ptr<std::map<size_t, std::shared_ptr<const typename LocalGridViewType::Implementation>>>
   addOneLayerOfOverSampling(
       const SubdomainMapType& subdomainToEntityMap,
-      const std::vector<std::shared_ptr<const typename LocalGridViewType::Implementation>>& localGridParts,
+      const std::map<size_t, std::shared_ptr<const typename LocalGridViewType::Implementation>>& localGridParts,
       const size_t neighbor_recursion_level,
       SubdomainMapType& subdomainToOversamplingEntitiesMap)
   {
@@ -704,7 +704,7 @@ private:
       // * and create an empty local boundary info map for later use
       oversamplingSubdomainInnerBoundaryInfos[subdomain] = std::make_shared<EntityToIntersectionInfoMapType>();
       // * then walk the local grid part to find the local boundary entities
-      const LocalGridViewType& localGridPart = *(localGridParts[subdomain]);
+      const LocalGridViewType& localGridPart = *localGridParts.at(subdomain);
       for (auto entityIt = localGridPart.template begin<0>(); entityIt != localGridPart.template end<0>(); ++entityIt) {
         // get the entity index
         const EntityType& entity = *entityIt;
@@ -805,7 +805,7 @@ private:
 
     // and create the oversampled local grid parts
     auto oversampledLocalGridPartsRet =
-        std::make_shared<std::vector<std::shared_ptr<const typename LocalGridViewType::Implementation>>>(size_);
+        std::make_shared<std::map<size_t, std::shared_ptr<const typename LocalGridViewType::Implementation>>>();
     auto& oversampledLocalGridParts = *oversampledLocalGridPartsRet;
     for (auto subdomainIterator = subdomainToOversamplingEntitiesMap.begin();
          subdomainIterator != subdomainToOversamplingEntitiesMap.end();
@@ -894,17 +894,18 @@ private:
   SubdomainMapType subdomainToEntityMap_;
   SubdomainMapType subdomainToOversamplingEntitiesMap_;
   // for the neighboring information
-  std::shared_ptr<std::vector<NeighboringSubdomainsSetType>> neighboringSubdomainSets_;
+  std::shared_ptr<std::map<size_t, NeighboringSubdomainsSetType>> neighboringSubdomainSets_;
   // for the local grid parts
   std::map<size_t, CodimSizesType> localCodimSizes_;
-  std::shared_ptr<std::vector<std::shared_ptr<const typename LocalGridViewType::Implementation>>> localGridParts_;
-  std::shared_ptr<std::vector<std::shared_ptr<const typename LocalGridViewType::Implementation>>>
+  std::shared_ptr<std::map<size_t, std::shared_ptr<const typename LocalGridViewType::Implementation>>> localGridParts_;
+  std::shared_ptr<std::map<size_t, std::shared_ptr<const typename LocalGridViewType::Implementation>>>
       oversampledLocalGridParts_;
   // for the boundary grid parts
   std::shared_ptr<std::map<size_t, std::shared_ptr<const typename BoundaryGridViewType::Implementation>>>
       boundaryGridParts_;
   // for the coupling grid parts
-  std::shared_ptr<std::vector<std::map<size_t, std::shared_ptr<const typename CouplingGridViewType::Implementation>>>>
+  std::shared_ptr<
+      std::map<size_t, std::map<size_t, std::shared_ptr<const typename CouplingGridViewType::Implementation>>>>
       couplingGridPartsMaps_;
   bool oversampled_;
 }; // class SubdomainGridFactory

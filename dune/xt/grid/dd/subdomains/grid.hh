@@ -70,15 +70,16 @@ public:
       const std::shared_ptr<const GridType> grd,
       const std::shared_ptr<const GlobalGridViewType> globalGrdPrt,
       const size_t sz,
-      const std::shared_ptr<const std::vector<NeighborSetType>> neighboringSets,
+      const std::shared_ptr<const std::map<size_t, NeighborSetType>> neighboringSets,
       const std::shared_ptr<const EntityToSubdomainMapType> entityToSubdMap,
-      const std::shared_ptr<const std::vector<std::shared_ptr<const typename LocalGridViewType::Implementation>>>
+      const std::shared_ptr<const std::map<size_t, std::shared_ptr<const typename LocalGridViewType::Implementation>>>
           localGridViews,
       const std::shared_ptr<
           const std::map<size_t, std::shared_ptr<const typename BoundaryGridViewType::Implementation>>>
           boundaryGridViews,
       const std::shared_ptr<
-          const std::vector<std::map<size_t, std::shared_ptr<const typename CouplingGridViewType::Implementation>>>>
+          const std::map<size_t,
+                         std::map<size_t, std::shared_ptr<const typename CouplingGridViewType::Implementation>>>>
           couplingGridViewsMaps,
       std::set<size_t> subdomains_on_rank)
     : grid_(grd)
@@ -115,17 +116,18 @@ public:
       const std::shared_ptr<const GridType> grd,
       const std::shared_ptr<const GlobalGridViewType> globalGrdPrt,
       const size_t sz,
-      const std::shared_ptr<const std::vector<NeighborSetType>> neighboringSets,
+      const std::shared_ptr<const std::map<size_t, NeighborSetType>> neighboringSets,
       const std::shared_ptr<const EntityToSubdomainMapType> entityToSubdMap,
-      const std::shared_ptr<const std::vector<std::shared_ptr<const typename LocalGridViewType::Implementation>>>
+      const std::shared_ptr<const std::map<size_t, std::shared_ptr<const typename LocalGridViewType::Implementation>>>
           localGridViews,
       const std::shared_ptr<
           const std::map<size_t, std::shared_ptr<const typename BoundaryGridViewType::Implementation>>>
           boundaryGridViews,
       const std::shared_ptr<
-          const std::vector<std::map<size_t, std::shared_ptr<const typename CouplingGridViewType::Implementation>>>>
+          const std::map<size_t,
+                         std::map<size_t, std::shared_ptr<const typename CouplingGridViewType::Implementation>>>>
           couplingGridViewsMaps,
-      const std::shared_ptr<const std::vector<std::shared_ptr<const typename LocalGridViewType::Implementation>>>
+      const std::shared_ptr<const std::map<size_t, std::shared_ptr<const typename LocalGridViewType::Implementation>>>
           oversampledLocalGridViews,
       std::set<size_t> subdomains_on_rank)
     : grid_(grd)
@@ -194,13 +196,13 @@ public:
   {
     assert(subdomain < size_);
     if (!ovrsmplng)
-      return *((*localGridViews_)[subdomain]);
+      return *localGridViews_->at(subdomain);
 
     DUNE_THROW_IF(!oversampling_,
                   InvalidStateException,
                   "\n" << Common::color_string_red("ERROR:")
                        << " oversampled local grid part requested from a grid without oversampling!");
-    return *((*oversampledLocalGridViews_)[subdomain]);
+    return *oversampledLocalGridViews_->at(subdomain);
   } // ... local_grid_view(...)
 
   bool boundary(const size_t subdomain) const
@@ -227,7 +229,7 @@ public:
     // coupling_parts_contain_only_inner_entities_and_intersections to use these views!
     assert(subdomain < size_);
     assert(neighbor < size_);
-    const auto& couplingGridViews = (*couplingGridViewsMaps_)[subdomain];
+    const auto& couplingGridViews = couplingGridViewsMaps_->at(subdomain);
     const auto result = couplingGridViews.find(neighbor);
     DUNE_THROW_IF(result == couplingGridViews.end(),
                   InvalidStateException,
@@ -249,8 +251,7 @@ public:
   const NeighborSetType& neighborsOf(const size_t subdomain) const
   {
     assert(subdomain < size_);
-    const std::vector<NeighborSetType>& neighboringSets = *neighboringSetsPtr_;
-    return neighboringSets[subdomain];
+    return neighboringSetsPtr_->at(subdomain);
   }
 
   size_t subdomainOf(const IndexType& globalIndex) const
@@ -270,17 +271,17 @@ public:
   const std::shared_ptr<const GridType> grid_;
   const std::shared_ptr<const GlobalGridViewType> globalGridView_;
   const size_t size_;
-  const std::shared_ptr<const std::vector<NeighborSetType>> neighboringSetsPtr_;
+  const std::shared_ptr<const std::map<size_t, NeighborSetType>> neighboringSetsPtr_;
   const std::shared_ptr<const EntityToSubdomainMapType> entityToSubdomainMap_;
-  const std::shared_ptr<const std::vector<std::shared_ptr<const typename LocalGridViewType::Implementation>>>
+  const std::shared_ptr<const std::map<size_t, std::shared_ptr<const typename LocalGridViewType::Implementation>>>
       localGridViews_;
   const std::shared_ptr<const std::map<size_t, std::shared_ptr<const typename BoundaryGridViewType::Implementation>>>
       boundaryGridViews_;
   const std::shared_ptr<
-      const std::vector<std::map<size_t, std::shared_ptr<const typename CouplingGridViewType::Implementation>>>>
+      const std::map<size_t, std::map<size_t, std::shared_ptr<const typename CouplingGridViewType::Implementation>>>>
       couplingGridViewsMaps_;
   bool oversampling_;
-  const std::shared_ptr<const std::vector<std::shared_ptr<const typename LocalGridViewType::Implementation>>>
+  const std::shared_ptr<const std::map<size_t, std::shared_ptr<const typename LocalGridViewType::Implementation>>>
       oversampledLocalGridViews_;
   const std::list<size_t> subdomains_on_rank_;
 }; // class SubdomainGrid
